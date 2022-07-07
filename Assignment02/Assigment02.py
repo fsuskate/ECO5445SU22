@@ -71,8 +71,8 @@ pretty_print_heading("""
 B = "I like pie more than cake."
 print(B[:6])
 print(B[7:15])
-print(B[16:])
-print(B[:6] + " " + B[11:16] + B[21:])
+print(B[16:]) # Didn't want period included (-2)
+print(B[:6] + " " + B[11:16] + B[21:]) # Follow through error
 
 pretty_print_heading("""
 ##################################################
@@ -86,7 +86,15 @@ def foobar(value: int) -> str:
     * If it is a multiple of 5 return the string "bar"
     * If it is a multiple of 15 return the string "foobar"
     * If it does not satisfy any of those, return the string "Not a multiple of 3, 5, or 15"
-    """
+    # >>> foobar(9)
+    # "foo"
+    # >>> foobar(10)
+    # "bar"
+    # >>> foobar(45)
+    # "foobar"
+    # >>> foobar(19)
+    # "Not a multiple of 3, 5, or 15"   
+    """ # Missing examples. I inserted some (-5)
     if (type(value) != int):
         print("Only integer values can be entered.")
         return "invalid"
