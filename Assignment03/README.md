@@ -32,7 +32,6 @@ A = [ 5,  6,  7,  8 ]
 
     We can write this in matrix notation as:
 
-    $\begin{bmatrix}1 &  20\\\\1 & -40\end{bmatrix}\cdot\begin{bmatrix}Q\\p\end{bmatrix}=\begin{bmatrix}286\\\\88\end{bmatrix}$
-    $\begin{bmatrix}1 &  20\\\\1 & -40\end{bmatrix}\cdot\begin{bmatrix}Q\\p\end{bmatrix}=\begin{bmatrix}286\\\\88\end{bmatrix}$
+    $\begin{bmatrix}1 &  20\\\\1 & -40\end{bmatrix}\cdot\begin{bmatrix}Q\\\\p\end{bmatrix}=\begin{bmatrix}286\\\\88\end{bmatrix}$
 
     Using the tools provided in the lecture, solve for the equilibrium price and quantity.
