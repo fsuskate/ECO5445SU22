@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from multiprocessing.dummy import Array
 import numpy as np
 
 print("""
@@ -60,7 +59,7 @@ B = 2*A-8
 print(f'B = 2 * A - 8 is \n{B}\n')
 print(f'B\'s transpose is \n{B.T}\n')
 
-def getCummulativeSumOfRows(array: Array, message: str):
+def getCummulativeSumOfRows(array: np.ndarray, message: str) -> int:
     cummulativeSumOfRows = 0
     print(message)
     for idx, row in enumerate(array, start=1):
