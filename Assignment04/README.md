@@ -3,7 +3,7 @@
 Upload your url to your folder that you create.
 
 1. Create a folder called "Assignment04"
-2. The task is to compute an approximation to  using Monte Carlo.
+2. The task is to compute an approximation to $\pi$ using [Monte Carlo](https://en.wikipedia.org/wiki/Monte_Carlo_method).
 
     Use no imports besides
 
