@@ -30,9 +30,10 @@ print("""
 """)
 
 # Constants
-r = .5
+square_size = 1
+r = square_size/2
 r_sqr = r**2
-circle_center = .5
+circle_center = square_size/2
 
 def isInCircle(x: float, y: float) -> bool:
     return ((x-circle_center)**2 + (y-circle_center)**2) <= r_sqr
@@ -61,8 +62,8 @@ def estimatePi(numTries=10000, verbose=False) -> float:
     S = 0
 
     for _ in range(numTries): 
-        x = np.random.uniform(0,1)
-        y = np.random.uniform(0,1)
+        x = np.random.uniform(0,square_size)
+        y = np.random.uniform(0,square_size)
         S += 1
         if (isInCircle(x, y)):
             C += 1
