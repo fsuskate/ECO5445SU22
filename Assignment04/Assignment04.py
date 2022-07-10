@@ -80,7 +80,7 @@ def runTimedEstimate(numTries: int):
     start = time.time()
     estimate = estimatePi(numTries)
     end = time.time()
-    print(f'Estimate of pi with {numTries} rain drops: \033[32m{estimate}\033[0m took \033[33m{round(end-start, 4)}\033[0m seconds. ')
+    print(f'Estimate of pi (\033[32m{np.pi}\033[0m) with {numTries} rain drops: \033[32m{estimate}\033[0m took \033[33m{round(end-start, 4)}\033[0m seconds. ')
 
 help(estimatePi)
 
@@ -102,3 +102,26 @@ while (True):
     if (val == 'X' or val == 'x'):
         break
     runTimedEstimate(int(val))
+
+print("""\n\n\n      ################################  
+    ##################################  
+   ###################################  
+   ####    #####         ####           
+  ###      #####        #####           
+  #        #####        #####           
+  #        #####        ####            
+           ####         ####            
+           ####         ####            
+           ####         ####            
+          #####        #####            
+          #####        #####            
+          ####         #####            
+          ####         #####            
+         #####         #####            
+        ######         #####            
+        #####          #####        ##  
+       #######         ######       ##  
+      #######           ##############  
+     #######            #############   
+     #######             ###########    
+     ######               #########  \n\n\n""")
