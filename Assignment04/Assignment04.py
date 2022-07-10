@@ -89,7 +89,7 @@ estimatePi(verbose=True)
 
 print("""\n\33[36mRunning simulation with several predefined values for rain drops.\n\33[0m""")
 
-tries = [10000, 25000, 100000]
+tries = [10000, 25000, 100000, 250000, 500000, 1000000]
 for curr_try in tries:
     runTimedEstimate(curr_try)
 
