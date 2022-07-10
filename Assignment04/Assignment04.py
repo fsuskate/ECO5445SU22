@@ -29,11 +29,13 @@ print("""
 ##################################################
 """)
 
+# Constants
 r = .5
 r_sqr = r**2
+circle_center = .5
 
 def isInCircle(x: float, y: float) -> bool:
-    return ((x-.5)**2 + (y-.5)**2) <= r_sqr
+    return ((x-circle_center)**2 + (y-circle_center)**2) <= r_sqr
 
 def estimatePi(numTries=10000, verbose=False) -> float: 
     """ 
