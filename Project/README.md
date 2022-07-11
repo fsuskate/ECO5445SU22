@@ -10,14 +10,14 @@ you will be modeling and the set of co-variates that you intend to include in yo
 5) What is the baseline probability of an individual being approved for a mortgage?
 6) Based on the data you read in, create a table with the following structure (values will not be the same as the example):
 
-| Applicant Race | Approved | Not Approved | Total |
------------------|----------|--------------|-------|
-American Indian or Alaskan Native | 5 |	13 | 18 |
-Asian or Pacific Islander |	21 | 12 | 33 |
-Black |	23 | 32 | 55 |
-Hispanic | 33 |	46 | 79 |
-White |	75 | 25	| 100 |
-Total |	157 | 128 |	285 |
+    | Applicant Race | Approved | Not Approved | Total |
+    -----------------|----------|--------------|-------|
+    American Indian or Alaskan Native | 5 |	13 | 18 |
+    Asian or Pacific Islander |	21 | 12 | 33 |
+    Black |	23 | 32 | 55 |
+    Hispanic | 33 |	46 | 79 |
+    White |	75 | 25	| 100 |
+    Total |	157 | 128 |	285 |
 
 7) From the table you create in 6, calculate the following:
 
