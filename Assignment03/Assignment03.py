@@ -41,7 +41,7 @@ print("""
 
 print(f'* number 7: A[1][2] = {A[1][2]}')
 print(f'* row 1: A[0] = {A[0]}')
-print(f'* column 2: A[:, 2] = {A[:, 2]}')
+print(f'* column 2: A[:, 2] = {A[:, 2]}') # Grabbed third column of the array (-4)
 print(f'* rows 2 and 3: A[1:2, :] = {A[1:3, :]}')
 print(f'* values 7,8,11, and 12: A[1:3, 2:4] = {A[1:3, 2:4]}')
 
