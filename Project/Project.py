@@ -14,13 +14,9 @@
 
 import pandas as pd
 import os
-from Enums import Columns
-from Enums import Races
-from Enums import ActionTypes
-from Constants import COLUMN_NAMES
-from Constants import COLUMN_MAPPING
-from Constants import COLUMN_NAMES_OUTPUT
-from Constants import RACES_MAPPING
+from Enums import *
+from Constants import *
+from Globals import *
 
 folder = os.getcwd()
 os.chdir(folder + "\\Project\\Data")
@@ -29,41 +25,13 @@ print(os.listdir())
 df = pd.read_csv("hmda_sw.csv", delimiter=',')
 
 df.rename(columns=COLUMN_MAPPING, inplace=True)
-
-print(df)
+# print(df)
 
 df_model_data = df.filter(COLUMN_NAMES)
-
-print(df_model_data)
+# print(df_model_data)
 
 sum_stats = df_model_data.describe(include='all')
-
-# columns have representative values so, need to interpret them first
-print(sum_stats)
-
-totals = {
-    Races.AMER_IND:0,
-    Races.ASIAN:0,
-    Races.BLACK:0,
-    Races.HISP:0,
-    Races.WHITE:0,
-}
-
-total_approved = {
-    Races.AMER_IND:0,
-    Races.ASIAN:0,
-    Races.BLACK:0,
-    Races.HISP:0,
-    Races.WHITE:0,
-}
-
-total_not_approved = {
-    Races.AMER_IND:0,
-    Races.ASIAN:0,
-    Races.BLACK:0,
-    Races.HISP:0,
-    Races.WHITE:0,
-}
+print(f'{sum_stats}\n')
 
 def is_approved(action_type: int) -> bool:
     if (action_type == ActionTypes.LOAN_ORIGINATED or action_type == ActionTypes.APP_APPROVED_NOT_ACCEPTED):
@@ -96,7 +64,7 @@ for idx, row in df_model_data.iterrows():
     update_totals(race, row)
 
 output_df = create_output_dataframe()
-print(f'{output_df}\n')
+print(f'{output_df.to_string(index=False)}\n')
 
 prob_of_approved_white = output_df.loc[Races.WHITE-1, 'Approved']/output_df.loc[Races.WHITE-1, 'Total']
 print(f'P(Approved|White) = {prob_of_approved_white}')
