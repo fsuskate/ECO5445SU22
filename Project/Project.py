@@ -122,24 +122,33 @@ def is_approved(action_type: int) -> bool:
         return False
     print(f"Not sure if approved or not: {action_type}")
 
-for idx, row in df_model_data.iterrows():
-    race = row[column_names[Columns.RACE]]
+def update_totals(race: Races, row):
     totals[race] += 1
 
-    if (race == Races.BLACK):
-        approved = is_approved(row[Columns.TYPE_OF_ACTION])   
-        if (approved):
-            total_approved[Races.BLACK] += 1
-        else:
-            total_not_approved[Races.BLACK] += 1
-    elif (race == Races.WHITE):
-        approved = is_approved(row[Columns.TYPE_OF_ACTION])   
-        if (approved):
-            total_approved[Races.WHITE] += 1
-        else:
-            total_not_approved[Races.WHITE] += 1
+    approved = is_approved(row[Columns.TYPE_OF_ACTION])   
+    if (approved):
+        total_approved[race] += 1
+    else:
+        total_not_approved[race] += 1
 
-print(totals)
+for idx, row in df_model_data.iterrows():
+    race = row[column_names[Columns.RACE]]    
+    update_totals(race, row)
+
+print(f'totals: {totals}\napproved:{total_approved}\nnot approved: {total_not_approved}')
 
 output_df = pd.DataFrame(columns=column_names_output)
-output_df.append({})
+for race in Races: 
+    output_df = output_df.append({
+        column_names_output[0]:races[race],
+        column_names_output[1]:total_approved[race],
+        column_names_output[2]:total_not_approved[race],
+        column_names_output[3]:totals[race]
+    }, ignore_index=True)
+print(output_df)
+
+prob_of_approved_white = output_df.loc[4, 'Approved']/output_df.loc[4, 'Total']
+print(f'P(Approved|White) = {prob_of_approved_white}')
+
+prob_of_approved_black = output_df.loc[2, 'Approved']/output_df.loc[2, 'Total']
+print(f'P(Approved|Black) = {prob_of_approved_black}')
