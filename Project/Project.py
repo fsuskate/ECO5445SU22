@@ -18,6 +18,13 @@ from Enums import *
 from Constants import *
 from Globals import *
 
+"""
+##################################################
+#
+# Questions 3: bring in the dataset
+# 
+##################################################
+"""
 folder = os.getcwd()
 os.chdir(folder + "\\Project\\Data")
 print(os.getcwd())
@@ -30,8 +37,24 @@ df.rename(columns=COLUMN_MAPPING, inplace=True)
 df_model_data = df.filter(COLUMN_NAMES)
 # print(df_model_data)
 
+"""
+##################################################
+#
+# Questions 4: generate summary statistics
+# 
+##################################################
+"""
 sum_stats = df_model_data.describe(include='all')
 print(f'{sum_stats}\n')
+
+"""
+##################################################
+#
+# Questions 5: baseline probability of an individual
+# being approved for a mortgage.
+# 
+##################################################
+"""
 
 def is_approved(action_type: int) -> bool:
     if (action_type == ActionTypes.LOAN_ORIGINATED or action_type == ActionTypes.APP_APPROVED_NOT_ACCEPTED):
@@ -63,8 +86,28 @@ for idx, row in df_model_data.iterrows():
     race = row[COLUMN_NAMES[Columns.RACE]]    
     update_totals(race, row)
 
+prob_of_approved_overall = sum(total_approved.values())/sum(totals.values())
+print(f'P(Approved|Overall) = {prob_of_approved_overall}\n')
+
+"""
+##################################################
+#
+# Questions 6: create table  
+# 
+##################################################
+"""
+
 output_df = create_output_dataframe()
 print(f'{output_df.to_string(index=False)}\n')
+
+
+"""
+##################################################
+#
+# Questions 7: calculate probabilities
+# 
+##################################################
+"""
 
 prob_of_approved_white = output_df.loc[Races.WHITE-1, 'Approved']/output_df.loc[Races.WHITE-1, 'Total']
 print(f'P(Approved|White) = {prob_of_approved_white}')
@@ -72,5 +115,4 @@ print(f'P(Approved|White) = {prob_of_approved_white}')
 prob_of_approved_black = output_df.loc[Races.BLACK-1, 'Approved']/output_df.loc[Races.BLACK-1, 'Total']
 print(f'P(Approved|Black) = {prob_of_approved_black}')
 
-prob_of_approved_overall = output_df.loc[len(Races), 'Approved']/output_df.loc[len(Races), 'Total']
-print(f'P(Approved|Overall) = {prob_of_approved_overall}')
+
