@@ -23,7 +23,7 @@ from Constants import COLUMN_NAMES_OUTPUT
 from Constants import RACES_MAPPING
 
 folder = os.getcwd()
-os.chdir(folder + "\\Project")
+os.chdir(folder + "\\Project\\Data")
 print(os.getcwd())
 print(os.listdir())
 df = pd.read_csv("hmda_sw.csv", delimiter=',')
