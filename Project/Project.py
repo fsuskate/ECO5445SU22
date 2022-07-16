@@ -61,13 +61,6 @@ sum_stats = df_model_data.describe(include='all')
 # columns have representative values so, need to interpret them first
 print(sum_stats)
 
-column_names_output = [
-    'Applicant Race', 
-    'Approved', 
-    'Not Approved', 
-    'Total'
-]
-
 class Races(IntEnum):
     AMER_IND = 1,
     ASIAN = 2,
@@ -137,6 +130,13 @@ for idx, row in df_model_data.iterrows():
 
 print(f'totals: {totals}\napproved:{total_approved}\nnot approved: {total_not_approved}')
 
+column_names_output = [
+    'Applicant Race', 
+    'Approved', 
+    'Not Approved', 
+    'Total'
+]
+
 output_df = pd.DataFrame(columns=column_names_output)
 for race in Races: 
     output_df = output_df.append({
@@ -145,10 +145,20 @@ for race in Races:
         column_names_output[2]:total_not_approved[race],
         column_names_output[3]:totals[race]
     }, ignore_index=True)
+
+output_df = output_df.append({
+    column_names_output[0]:'Total',
+    column_names_output[1]:sum(total_approved.values()),
+    column_names_output[2]:sum(total_not_approved.values()),
+    column_names_output[3]:sum(totals.values())
+}, ignore_index=True)
 print(output_df)
 
-prob_of_approved_white = output_df.loc[4, 'Approved']/output_df.loc[4, 'Total']
+prob_of_approved_white = output_df.loc[Races.WHITE-1, 'Approved']/output_df.loc[Races.WHITE-1, 'Total']
 print(f'P(Approved|White) = {prob_of_approved_white}')
 
-prob_of_approved_black = output_df.loc[2, 'Approved']/output_df.loc[2, 'Total']
+prob_of_approved_black = output_df.loc[Races.BLACK-1, 'Approved']/output_df.loc[Races.BLACK-1, 'Total']
 print(f'P(Approved|Black) = {prob_of_approved_black}')
+
+prob_of_approved_overall = output_df.loc[len(Races), 'Approved']/output_df.loc[len(Races), 'Total']
+print(f'P(Approved|Overall) = {prob_of_approved_overall}')
