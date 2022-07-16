@@ -130,6 +130,7 @@ for idx, row in df_model_data.iterrows():
 
 print(f'totals: {totals}\napproved:{total_approved}\nnot approved: {total_not_approved}')
 
+
 column_names_output = [
     'Applicant Race', 
     'Approved', 
@@ -137,21 +138,13 @@ column_names_output = [
     'Total'
 ]
 
-output_df = pd.DataFrame(columns=column_names_output)
-for race in Races: 
-    output_df = output_df.append({
-        column_names_output[0]:races[race],
-        column_names_output[1]:total_approved[race],
-        column_names_output[2]:total_not_approved[race],
-        column_names_output[3]:totals[race]
-    }, ignore_index=True)
+list = []
+for race in Races:
+    list.append([races[race],total_approved[race],total_not_approved[race],totals[race]])
+list.append(['Total',sum(total_approved.values()),sum(total_not_approved.values()),sum(totals.values())])
 
-output_df = output_df.append({
-    column_names_output[0]:'Total',
-    column_names_output[1]:sum(total_approved.values()),
-    column_names_output[2]:sum(total_not_approved.values()),
-    column_names_output[3]:sum(totals.values())
-}, ignore_index=True)
+output_df = pd.DataFrame.from_records(list)
+output_df.columns = column_names_output
 print(output_df)
 
 prob_of_approved_white = output_df.loc[Races.WHITE-1, 'Approved']/output_df.loc[Races.WHITE-1, 'Total']
