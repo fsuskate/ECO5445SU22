@@ -12,8 +12,11 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+1. Create a folder called "Assignment 05"
 
-# Question 2 from Assignment02
+2. Repeat questions 2 and 5 from Assignment 02, but using R instead of Python
+
+* Question 2 from Assignment02
 ```{r}
 intTwo = 2
 floatTwo = 2.0
@@ -28,7 +31,7 @@ print(typeof(aString))
 print(typeof(aBool))
 ```
 
-# Question 5 from Assignment02
+* Question 5 from Assignment02
 ```{r}
 foobar <- function(value) {
   if (value %% 15 == 0) {
@@ -51,13 +54,13 @@ foobar(15)
 foobar(60)
 foobar(-5)
 ```
-# Question 3
+3. Bring in the dataset "swiss" (details about dataset here: swiss function - RDocumentation) (Links to an external site.) Provide the summary statistics for all the variables
 ```{r}
 attach(swiss)
 summary(swiss)
 detach(swiss)
 ```
-# Question 4
+4. Which Province has the highest percent of males involved in agriculture as their occupation?
 ```{r}
 attach(swiss)
 ordered <- swiss[order(swiss$Agriculture), ]
@@ -74,11 +77,19 @@ detach(swiss)
 
 We can also use switch.max to extract the row with the max of the agriculture column which we see again is Herens.
 
-# Question 5
-List the correlations
+5. Provide the correlation values between all the variables
 
 ```{r}
 attach(swiss)
 cor(swiss)
+detach(swiss)
+```
+
+6. Plot the relationship between fertility and education where fertility is on the y-axis and education is on the x-axis Provide a histogram of the % of individuals that were catholic
+
+```{r}
+attach(swiss)
+plot(swiss$Education, swiss$Fertility)
+hist(swiss$Catholic)
 detach(swiss)
 ```
