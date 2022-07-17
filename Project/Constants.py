@@ -1,5 +1,8 @@
+from tables import Unknown
 from Enums import Columns
 from Enums import Races
+
+MISSING_OBSERVATION = 999999.4
 
 COLUMN_NAMES = [
     'Race', 
