@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Question 2 from Assignment02
-```
+```{r}
 intTwo = 2
 floatTwo = 2.0
 mixed = 10j
@@ -29,6 +29,7 @@ print(typeof(aBool))
 ```
 
 # Question 5 from Assignment02
+```{r}
 foobar <- function(value) {
   if (value %% 15 == 0) {
     result <- "foobar"
@@ -43,8 +44,41 @@ foobar <- function(value) {
   return(result)
 }
 
+foobar
 foobar(5)
 foobar(3)
 foobar(15)
 foobar(60)
 foobar(-5)
+```
+# Question 3
+```{r}
+attach(swiss)
+summary(swiss)
+detach(swiss)
+```
+# Question 4
+```{r}
+attach(swiss)
+ordered <- swiss[order(swiss$Agriculture), ]
+ordered
+View(ordered)
+```
+
+Looking at the ordered on Agriculture data frame, we can see that Herens province has the highest percent of males involved in agriculture.
+
+```{r}
+swiss[which.max(swiss$Agriculture),]
+detach(swiss)
+```
+
+We can also use switch.max to extract the row with the max of the agriculture column which we see again is Herens.
+
+# Question 5
+List the correlations
+
+```{r}
+attach(swiss)
+cor(swiss)
+detach(swiss)
+```
