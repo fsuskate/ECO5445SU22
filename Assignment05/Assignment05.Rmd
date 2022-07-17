@@ -20,7 +20,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 intTwo = 2
 floatTwo = 2.0
-mixed = 10j
+mixed = "10j"
 aString = "2 Cool for School"
 aBool = TRUE
 
