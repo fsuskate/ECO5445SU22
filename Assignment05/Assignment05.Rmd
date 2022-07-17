@@ -1,0 +1,50 @@
+---
+title: "ECCO5445SU22: Assignment05"
+author: "Francis Surroca"
+date: '2022-07-17'
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Question 2 from Assignment02
+```
+intTwo = 2
+floatTwo = 2.0
+mixed = 10j
+aString = "2 Cool for School"
+aBool = TRUE
+
+print(typeof(intTwo))
+print(typeof(floatTwo))
+print(typeof(mixed))
+print(typeof(aString))
+print(typeof(aBool))
+```
+
+# Question 5 from Assignment02
+foobar <- function(value) {
+  if (value %% 15 == 0) {
+    result <- "foobar"
+  } else if (value %% 3 == 0){
+    result <- "foo"
+  } else if (value %% 5 == 0) {
+    result <- "bar"
+  } else {
+    result <- "Not a multiple of 3, 5, or 15"
+  }
+
+  return(result)
+}
+
+foobar(5)
+foobar(3)
+foobar(15)
+foobar(60)
+foobar(-5)
