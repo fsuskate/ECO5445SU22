@@ -1,6 +1,6 @@
 ---
 title: "Assignment 6"
-author: "Your Name Here"
+author: "Francis Surroca"
 date: '2022-07-24'
 output: 
   html_document:
@@ -146,10 +146,21 @@ plot(simple_reg)
 Based off of your findings in the previous section, make changes to the variables, the functional form, etc.
 
 ```{r}
-fixed_reg = glm(sale_def ~ bed + bath + area_heated + dist_cbd + dist_lakes + pool + lake_front + downtown + luxury, data=prop_prices)
+# Try removing outliers
+normalized <- subset(prop_prices, prop_prices$sale_def < 1000000)
+
+# Use only the most significant variables in the formula
+fixed_reg = glm(sale_def ~ bed + area_heated + lake_front + luxury, data=normalized)
 summary(fixed_reg) 
 coef(fixed_reg) 
 plot(fixed_reg)
+# Looking at the plots, it seems like a better fit
+
+# Try using log of large values to even the playing field
+fixed_reg2 = glm(log(sale_def) ~ bed + log(area_heated) + lake_front + luxury, data=normalized)
+summary(fixed_reg2) 
+coef(fixed_reg2) 
+plot(fixed_reg2)
 
 ```
 
@@ -167,9 +178,17 @@ Based on the following inputs, predict the deflated sales price:
 - no pool
 
 ```{r}
-new_house_df <- data.frame(bed=2,bath=2,area_heated=1223,area=9750,dist_cbd=19368,dist_lakes=490,pool=0)
-linear_model <- lm(formula = sale_def ~ bed + bath + area + area_heated + dist_cbd + 
+# Using basic model
+new_house_df <- data.frame(bed=2,bath=2,area_heated=1223,area=9750,dist_cbd=19368,dist_lakes=490,pool=0,lake_front=0,luxury=0)
+basic_linear_model <- lm(formula = sale_def ~ bed + bath + area + area_heated + dist_cbd + 
     dist_lakes + pool, data = prop_prices)
-predict(linear_model, newdata=new_house_df)
+predict(basic_linear_model, newdata=new_house_df)
+
+# Now using fixed models
+predict(fixed_reg, newdata=new_house_df)
+
+# Need to take e^predication since fixed_reg2 is based on logs
+exp(predict(fixed_reg2, newdata=new_house_df))
+
 
 ```
