@@ -26,12 +26,43 @@ We downloaded the .csv file hmda.sw.csv from the GitHub repository and loaded it
 
 ```{r}
 df_model_data <- read.csv("data\\hmda_sw.csv")
-head(df_model_data)
-summary(df_model_data)
+# head(df_model_data)
+# summary(df_model_data)
 ```
 
 # Transform Data
 We gave the variables in the dataset intuitive names first referencing the data description and the AER paper.
+
+```{r}
+COLUMN_NAMES <- c(
+    'Race', 
+    'Marital Status', 
+    'Self Employed', 
+    'Dept to Income', 
+    'Years of Education',
+    'Type of Action Taken'
+)
+
+COLUMN_MAPPING <- c(
+    's13'='Race', 
+    's23a'='Marital Status', 
+    's27a'='Self Employed', 
+    's45'= 'Dept to Income',
+    'school'= 'Years of Education',
+    's7'='Type of Action Taken'
+)
+
+for (i in seq(1,length(COLUMN_MAPPING))){
+  col_name_map <- COLUMN_MAPPING[i]
+  col_name <- names(col_name_map)
+  print(paste("Renaming column: ", col_name, " to: ", col_name_map))
+  names(df_model_data)[names(df_model_data) == col_name] <- col_name_map
+}
+
+df_model_data <- subset(df_model_data, select = COLUMN_NAMES)
+head(df_model_data)
+
+```
 
 ```{r}
 prop_prices$lake_front <- prop_prices$dist_lakes
