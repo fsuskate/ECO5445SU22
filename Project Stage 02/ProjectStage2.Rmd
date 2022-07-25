@@ -78,19 +78,22 @@ head(df_model_data)
 
 # Clean the Data before Interpretation
 
-a. Set all MISSING_OBSERVATION values to 0 to make data easier to work with
+a.  Set all MISSING_OBSERVATION values to 0 to make data easier to work with
 
 ```{r}
 df_model_data$'Years of Education'[which(df_model_data$`Years of Education` == MISSING_OBSERVATION)] <- 0
 ```
-b. Set type of action to either just approved/not approved
+
+b.  Set type of action to either just approved/not approved
+
 ```{r}
 df_model_data$'Type of Action Taken'[which(df_model_data$'Type of Action Taken' <= ActionTypes['APP_APPROVED_NOT_ACCEPTED'])] <- 1
 df_model_data$'Type of Action Taken'[which(df_model_data$'Type of Action Taken' > ActionTypes['APP_APPROVED_NOT_ACCEPTED'])] <- 0
 
 ```
 
-c. Convert marital status to an integer data type
+c.  Convert marital status to an integer data type
+
 ```{r}
 df_model_data$'Marital Status'[which(df_model_data$'Marital Status' == 'M')] <- 1
 df_model_data$'Marital Status'[which(df_model_data$'Marital Status' == 'U')] <- 0
@@ -99,88 +102,55 @@ df_model_data$'Marital Status'[which(df_model_data$'Marital Status' == 'NA')] <-
 df_model_data$'Marital Status' <- as.numeric(df_model_data$`Marital Status`)
 ```
 
-d. Get rid of huge outliers in dept to income
+d.  Get rid of huge outliers in dept to income
+
 ```{r}
 df_model_data$'Dept to Income'[which(df_model_data$'Dept to Income' > 100.0)] <- mean(df_model_data$'Dept to Income')
 ```
 
 # Generate Summary Statitics
-a. Get and display summary statistics
+
+a.  Get and display summary statistics
+
 ```{r}
 sum_stats = summary(df_model_data)
 print(sum_stats)
 ```
 
-b. Generate default histograms
+b.  Generate default histograms
+
 ```{r}
+par(mfrow = c(2,3))
 hist(df_model_data$Race)
 hist(df_model_data$`Marital Status`)
 hist(df_model_data$`Self Employed`)
 hist(df_model_data$`Dept to Income`)
 hist(df_model_data$`Years of Education`)
 hist(df_model_data$`Type of Action Taken`)
+par(mfrow = c(1,1))
 ```
 
-c. Investigate data grouped by race
-```{r}
-grouped_by_race = df_model_data.groupby(COLUMN_NAMES[Columns.RACE])
-print(grouped_by_race.describe())
-grouped_by_race.hist()
-
-# investigate correlations between race and all other variables
-for col in COLUMN_NAMES:
-    print(f"Correlation between Race and {col}\n {np.corrcoef(df_model_data[COLUMN_NAMES[Columns.RACE]], df_model_data[col])}")
-
-# visualize some relationships plotted together on same graph
-black = df_model_data[COLUMN_NAMES[Columns.RACE]] == Races.BLACK
-white = df_model_data[COLUMN_NAMES[Columns.RACE]] == Races.WHITE
-for idx, col in enumerate(COLUMN_NAMES):
-    plt.figure(idx+10)
-    plt.style.use('ggplot')
-    plt.title(col)
-    plt.hist(df_model_data[col][white], edgecolor='black',color='blue',label=RACES_MAPPING[Races.WHITE])
-    plt.hist(df_model_data[col][black], edgecolor='black',color='brown',label=RACES_MAPPING[Races.BLACK])
-    plt.legend(loc='upper right')
-    plt.tight_layout()
-    plt.show()
-prop_prices$lake_front <- prop_prices$dist_lakes
-prop_prices$lake_front[prop_prices$lake_front < 100] = 1
-prop_prices$lake_front[prop_prices$lake_front > 100] = 0
-
-prop_prices$downtown <- prop_prices$dist_cbd
-prop_prices$downtown[prop_prices$downtown < 5280] = 1
-prop_prices$downtown[prop_prices$downtown > 5280] = 0
-
-prop_prices$luxury = 0
-prop_prices$luxury[prop_prices$bed > 4 & prop_prices$area_heated > 2500 & prop_prices$pool == 1] = 1
-
-
-# prop_prices$bed <- factor(prop_prices$bed)
-
-head(prop_prices)
-summary(prop_prices)
-
-```
-
-# Plotting
-
-Plot histograms for all variables. Additionally, add scatterplots for the relationships between all quantitative variables.
-
-1)  Plot of all variables
+c.  Frequency Counts by Race
 
 ```{r}
-hist(prop_prices$sale_def)
-hist(prop_prices$bed)
-hist(prop_prices$bath)
-hist(prop_prices$area_heated)
-hist(prop_prices$area)
-hist(prop_prices$dist_cbd)
-hist(prop_prices$dist_lakes)
-hist(prop_prices$pool)
-hist(prop_prices$lake_front)
-hist(prop_prices$downtown)
-
+table(df_model_data$Race, df_model_data$'Marital Status')
+table(df_model_data$Race, df_model_data$`Years of Education`)
+table(df_model_data$Race, df_model_data$`Self Employed`)
+table(df_model_data$Race, df_model_data$`Dept to Income`)
+table(df_model_data$Race, df_model_data$`Type of Action Taken`)
 ```
+
+```{r}
+par(mfrow=c(2,3))
+hist(table(df_model_data$Race))
+hist(table(df_model_data$'Marital Status'))
+hist(table(df_model_data$`Years of Education`))
+hist(table(df_model_data$`Self Employed`))
+hist(table(df_model_data$`Dept to Income`))
+hist(table(df_model_data$`Type of Action Taken`))
+par(mfrow=c(1,1))
+```
+A representative applicant is married, white, not self-employed, with 15 years of education and a dept to income ratio of 25.
 
 2)  Scatterplots for relationships between all quantitative variables
 
