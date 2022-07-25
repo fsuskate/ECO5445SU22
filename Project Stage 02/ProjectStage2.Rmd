@@ -31,9 +31,12 @@ df_model_data <- read.csv("data\\hmda_sw.csv")
 ```
 
 # Transform Data
+
 We gave the variables in the dataset intuitive names first referencing the data description and the AER paper.
 
 ```{r}
+MISSING_OBSERVATION = 999999.4
+
 COLUMN_NAMES <- c(
     'Race', 
     'Marital Status', 
@@ -52,6 +55,15 @@ COLUMN_MAPPING <- c(
     's7'='Type of Action Taken'
 )
 
+ActionTypes <- c(
+    'LOAN_ORIGINATED' = 1,
+    'APP_APPROVED_NOT_ACCEPTED' = 2,
+    'APP_DENIED' = 3,
+    'APP_WITHDRAWN' = 4,
+    'FILE_CLOSED' = 5,
+    'LOAN_PURCHASED' = 6
+)
+
 for (i in seq(1,length(COLUMN_MAPPING))){
   col_name_map <- COLUMN_MAPPING[i]
   col_name <- names(col_name_map)
@@ -64,7 +76,73 @@ head(df_model_data)
 
 ```
 
+# Clean the Data before Interpretation
+
+a. Set all MISSING_OBSERVATION values to 0 to make data easier to work with
+
 ```{r}
+df_model_data$'Years of Education'[which(df_model_data$`Years of Education` == MISSING_OBSERVATION)] <- 0
+```
+b. Set type of action to either just approved/not approved
+```{r}
+df_model_data$'Type of Action Taken'[which(df_model_data$'Type of Action Taken' <= ActionTypes['APP_APPROVED_NOT_ACCEPTED'])] <- 1
+df_model_data$'Type of Action Taken'[which(df_model_data$'Type of Action Taken' > ActionTypes['APP_APPROVED_NOT_ACCEPTED'])] <- 0
+
+```
+
+c. Convert marital status to an integer data type
+```{r}
+df_model_data$'Marital Status'[which(df_model_data$'Marital Status' == 'M')] <- 1
+df_model_data$'Marital Status'[which(df_model_data$'Marital Status' == 'U')] <- 0
+df_model_data$'Marital Status'[which(df_model_data$'Marital Status' == 'S')] <- 2
+df_model_data$'Marital Status'[which(df_model_data$'Marital Status' == 'NA')] <- -1
+df_model_data$'Marital Status' <- as.numeric(df_model_data$`Marital Status`)
+```
+
+d. Get rid of huge outliers in dept to income
+```{r}
+df_model_data$'Dept to Income'[which(df_model_data$'Dept to Income' > 100.0)] <- mean(df_model_data$'Dept to Income')
+```
+
+# Generate Summary Statitics
+a. Get and display summary statistics
+```{r}
+sum_stats = summary(df_model_data)
+print(sum_stats)
+```
+
+b. Generate default histograms
+```{r}
+hist(df_model_data$Race)
+hist(df_model_data$`Marital Status`)
+hist(df_model_data$`Self Employed`)
+hist(df_model_data$`Dept to Income`)
+hist(df_model_data$`Years of Education`)
+hist(df_model_data$`Type of Action Taken`)
+```
+
+c. Investigate data grouped by race
+```{r}
+grouped_by_race = df_model_data.groupby(COLUMN_NAMES[Columns.RACE])
+print(grouped_by_race.describe())
+grouped_by_race.hist()
+
+# investigate correlations between race and all other variables
+for col in COLUMN_NAMES:
+    print(f"Correlation between Race and {col}\n {np.corrcoef(df_model_data[COLUMN_NAMES[Columns.RACE]], df_model_data[col])}")
+
+# visualize some relationships plotted together on same graph
+black = df_model_data[COLUMN_NAMES[Columns.RACE]] == Races.BLACK
+white = df_model_data[COLUMN_NAMES[Columns.RACE]] == Races.WHITE
+for idx, col in enumerate(COLUMN_NAMES):
+    plt.figure(idx+10)
+    plt.style.use('ggplot')
+    plt.title(col)
+    plt.hist(df_model_data[col][white], edgecolor='black',color='blue',label=RACES_MAPPING[Races.WHITE])
+    plt.hist(df_model_data[col][black], edgecolor='black',color='brown',label=RACES_MAPPING[Races.BLACK])
+    plt.legend(loc='upper right')
+    plt.tight_layout()
+    plt.show()
 prop_prices$lake_front <- prop_prices$dist_lakes
 prop_prices$lake_front[prop_prices$lake_front < 100] = 1
 prop_prices$lake_front[prop_prices$lake_front > 100] = 0
