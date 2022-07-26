@@ -24,7 +24,7 @@ For this assignment, you are going to implement the LASSO regression covered in 
 
 You will need to reference your previous submission. We will use the previous data and your previous models.
 
-# Using Data and model from Assignment06
+# Use Data and model from Assignment06
 
 Bring in the data and make sure the data types are correct. If not, make the proper changes. The file is located within this project. *data/prop_prices_reduced.csv*
 
@@ -55,8 +55,9 @@ plot(fixed_reg)
 par(mfrow=c(1,1))
 
 ```
+# Seperate Data into Testing and Training
 
-1.  This time, I want you to separate your data into testing and training. For this exercise, randomly extract 100 for testing different models, and save the other 900 for training your models.
+This time, I want you to separate your data into testing and training. For this exercise, randomly extract 100 for testing different models, and save the other 900 for training your models.
 
 ```{r}
 sample_row_numbers <- sample(nrow(prop_prices), size=100)
@@ -65,7 +66,9 @@ training_df <- prop_prices[-sample_row_numbers, ]
 
 ```
 
-2.  Run your final model you had in the previous assignment to the training data
+# Run model
+
+Run your final model you had in the previous assignment to the training data
 
 ```{r}
 training_reg = glm(sale_def ~ bed + area_heated + lake_front + luxury, data=training_df)
@@ -77,7 +80,9 @@ par(mfrow=c(1,1))
 
 ```
 
-3.  With the same model in part 2, run the standard LASSO regression model on the training data.
+# LASSO
+
+With the same model in part 2, run the standard LASSO regression model on the training data.
 
 ```{r}
 training_response <- training_df$sale_def
@@ -89,7 +94,9 @@ summary(result)
 plot(result) ## path plot
 ```
 
-4.  Now using the same model in part 2, run a 10-fold cross-validated LASSO on the training data
+# 10-fold Cross-validation
+
+Now using the same model in part 2, run a 10-fold cross-validated LASSO on the training data
 
 ```{r}
 cv.result <- cv.gamlr(training_data_matrix, log(training_response), verb=TRUE,nfold =10)
@@ -105,7 +112,9 @@ plot(cv.result$gamlr) ## cv.gamlr includes a gamlr object
 
 ```
 
-5.  Lastly, using the testing data, I want you to calculate the RMSE for each of the lambda's selection methods discussed (AIC, BIC, AICc, cv.min, cv.1se) and the the model in part 2. Which method performed the best in prediction the home price?
+# Calculate RMSE for AIC, BIC, AICc, cv.min and cv.1se
+
+Lastly, using the testing data, I want you to calculate the RMSE for each of the lambda's selection methods discussed (AIC, BIC, AICc, cv.min, cv.1se) and the the model in part 2. Which method performed the best in prediction the home price?
 
 ```{r}
 ll <- log(result$lambda) ## the sequence of lambdas
