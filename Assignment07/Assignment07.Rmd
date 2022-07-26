@@ -1,0 +1,194 @@
+---
+title: "Assignment 7"
+author: "Francis Surroca"
+date: '2022-08-03'
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r packages}
+# Add any packages you want in this chunk:
+library(plotly)
+```
+
+We are going to look at the property prices for Orange County. From there we are going to try and predict the sales price by linear regression.
+
+# Importing Data 
+
+Bring in the data and make sure the data types are correct. If not, make the proper changes. The file is located within this project. *data/prop_prices_reduced.csv*
+
+```{r}
+prop_prices <- read.csv("data\\prop_prices_reduced.csv")
+head(prop_prices)
+summary(prop_prices)
+
+prop_prices$lake_front <- prop_prices$dist_lakes
+prop_prices$lake_front[prop_prices$lake_front < 100] = 1
+prop_prices$lake_front[prop_prices$lake_front > 100] = 0
+
+prop_prices$downtown <- prop_prices$dist_cbd
+prop_prices$downtown[prop_prices$downtown < 5280] = 1
+prop_prices$downtown[prop_prices$downtown > 5280] = 0
+
+prop_prices$luxury = 0
+prop_prices$luxury[prop_prices$bed > 4 & prop_prices$area_heated > 2500 & prop_prices$pool == 1] = 1
+
+
+# prop_prices$bed <- factor(prop_prices$bed)
+
+head(prop_prices)
+summary(prop_prices)
+
+```
+
+
+# Plotting
+
+Plot histograms for all variables. Additionally, add scatterplots for the relationships between all quantitative variables.
+
+1) Plot of all variables
+```{r}
+hist(prop_prices$sale_def)
+hist(prop_prices$bed)
+hist(prop_prices$bath)
+hist(prop_prices$area_heated)
+hist(prop_prices$area)
+hist(prop_prices$dist_cbd)
+hist(prop_prices$dist_lakes)
+hist(prop_prices$pool)
+hist(prop_prices$lake_front)
+hist(prop_prices$downtown)
+
+```
+
+2) Scatterplots for relationships between all quantitative variables
+
+** Sale price against all quantitative variables
+```{r}
+plot_ly(prop_prices, y = ~sale_def, x = ~area, type = 'scatter')
+plot_ly(prop_prices, y = ~sale_def, x = ~area_heated, type = 'scatter')
+plot_ly(prop_prices, y = ~sale_def, x = ~bed, type = 'scatter')
+plot_ly(prop_prices, y = ~sale_def, x = ~dist_cbd, type = 'scatter')
+plot_ly(prop_prices, y = ~sale_def, x = ~dist_lakes, type = 'scatter')
+plot_ly(prop_prices, y = ~sale_def, x = ~bath, type = 'scatter')
+
+plot(prop_prices$area_heated, prop_prices$sale_def)
+abline(lm(sale_def ~ area_heated, data=prop_prices))
+
+plot(prop_prices$area, prop_prices$sale_def)
+abline(lm(sale_def ~ area, data=prop_prices))
+
+plot(prop_prices$bed, prop_prices$sale_def)
+abline(lm(sale_def ~ bed, data=prop_prices))
+
+plot(prop_prices$dist_cbd, prop_prices$sale_def)
+abline(lm(sale_def ~ dist_cbd, data=prop_prices))
+
+plot(prop_prices$dist_lakes, prop_prices$sale_def)
+abline(lm(sale_def ~ dist_lakes, data=prop_prices))
+
+plot(prop_prices$bath, prop_prices$sale_def)
+abline(lm(sale_def ~ bath, data=prop_prices))
+
+```
+
+# Summary Statistics
+
+Provide basic summary statistics for univariate analysis. Also, provide the correlation between all the quantitative variables.
+
+```{r}
+summary(prop_prices)
+cor(prop_prices)
+
+```
+
+# Regression Analysis
+
+Run a regression with all the variables included. Print results of the regression.
+
+```{r}
+simple_reg = glm(sale_def ~ bed + bath + area + area_heated + dist_cbd + dist_lakes + pool + lake_front + downtown + luxury, data=prop_prices)
+summary(simple_reg) 
+coef(simple_reg) 
+
+```
+
+Which of the variables tested significant at the 95% level? Looking at the results and answering outside of the chunk is sufficient.
+
+Answer: Pool tested significant at the 95% confidence level.
+
+## Evaluating the model
+
+As is, are any of the Gauss-Markov assumptions violated? If so, which ones? How can you fix the issues?
+
+Using the plot of the regression model to test for Guass-Markov violations.
+
+The Residuals vs Fitted plot shows that there is increasing variance as price increases indicating bias which violates assumption 1. This plot also show that there is no linearity which is also a violation.
+
+The Q-Q plot does not show a diagnol line indicating that the data is not normally distributed.
+
+
+```{r}
+
+plot(simple_reg)
+
+```
+
+## New Model
+
+Based off of your findings in the previous section, make changes to the variables, the functional form, etc.
+
+```{r}
+# Try removing outliers
+normalized <- subset(prop_prices, prop_prices$sale_def < 1000000)
+
+# Use only the most significant variables in the formula
+fixed_reg = glm(sale_def ~ bed + area_heated + lake_front + luxury, data=normalized)
+summary(fixed_reg) 
+coef(fixed_reg) 
+plot(fixed_reg)
+# Looking at the plots, it seems like a better fit
+
+# Try using log of large values to even the playing field
+fixed_reg2 = glm(log(sale_def) ~ bed + log(area_heated) + lake_front + luxury, data=normalized)
+summary(fixed_reg2) 
+coef(fixed_reg2) 
+plot(fixed_reg2)
+
+```
+
+
+# Prediction
+
+Based on the following inputs, predict the deflated sales price:
+
+- 2 bed
+- 2 bath
+- area_heated = 1223
+- area = 9750
+- dist_cbd = 19368
+- dist_lakes = 490
+- no pool
+
+```{r}
+# Using basic model
+new_house_df <- data.frame(bed=2,bath=2,area_heated=1223,area=9750,dist_cbd=19368,dist_lakes=490,pool=0,lake_front=0,luxury=0)
+basic_linear_model <- lm(formula = sale_def ~ bed + bath + area + area_heated + dist_cbd + 
+    dist_lakes + pool, data = prop_prices)
+predict(basic_linear_model, newdata=new_house_df)
+
+# Now using fixed models
+predict(fixed_reg, newdata=new_house_df)
+
+# Need to take e^predication since fixed_reg2 is based on logs
+exp(predict(fixed_reg2, newdata=new_house_df))
+
+
+```
