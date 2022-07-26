@@ -1,10 +1,11 @@
-# Assignment05
+# Assignment07
 
-Upload your url to your folder that you create.
+For this assignment, you are going to implement the LASSO regression covered in class.
 
-1.  Create a folder called "Assignment 05"
-2.  Repeat questions 2 and 5 from Assignment 02, but using R instead of Python
-3.  Bring in the dataset "swiss" (details about dataset here: swiss function - RDocumentation) (Links to an external site.) Provide the summary statistics for all the variables
-4.  Which Province has the highest percent of males involved in agriculture as their occupation?
-5.  Provide the correlation values between all the variables
-6.  Plot the relationship between fertility and education where fertility is on the y-axis and education is on the x-axis Provide a histogram of the % of individuals that were catholic
+You will need to reference your previous submission. We will use the previous data and your previous models.
+
+1.  This time, I want you to separate your data into testing and training. For this exercise, randomly extract 100 for testing different models, and save the other 900 for training your models.
+2.  Run your final model you had in the previous assignment to the training data
+3.  With the same model in part 2, run the standard LASSO regression model on the training data.
+4.  Now using the same model in part 2, run a 10-fold cross-validated LASSO on the training data
+5.  Lastly, using the testing data, I want you to calculate the RMSE for each of the lambda's selection methods discussed (AIC, BIC, AICc, cv.min, cv.1se) and the the model in part 2. Which method performed the best in prediction the home price?
