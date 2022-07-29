@@ -28,15 +28,20 @@ import matplotlib.pyplot as plt
 ##################################################
 """
 folder = os.getcwd()
-git_path = 'C:\\Users\\fsurroca\\Documents\\GitHub\\ECO5445SU22'
-os.chdir(git_path + "\\Project\\Data")
-df = pd.read_csv("hmda_sw.csv", delimiter=',')
+#git_path = 'C:\\Users\\fsurroca\\Documents\\GitHub\\ECO5445SU22'
+#os.chdir(git_path + "\\Project\\Data")
+df = pd.read_csv("C:\\Users\\jo585802\\OneDrive - University of Central Florida\\Documents\\GitHub\ECO5445\\Project\\Data\\hmda_sw.csv", delimiter=',')
 
 df.rename(columns=COLUMN_MAPPING, inplace=True)
 # print(df)
 
 df_model_data = df.filter(COLUMN_NAMES)
 # print(df_model_data)
+
+###############################################################################
+# Why did you choose these variables in particular? What information from the
+# paper helped you decide?
+###############################################################################
 
 """
 ##################################################
@@ -94,6 +99,16 @@ for idx, col in enumerate(COLUMN_NAMES):
     plt.tight_layout()
     plt.show()
 
+###############################################################################
+# What about correlation values?
+###############################################################################
+
+
+###############################################################################
+# What does all this mean for the representative applicant?
+# What does it mean about the sample?
+###############################################################################
+
 """
 ##################################################
 #
@@ -126,6 +141,12 @@ for idx, row in df_model_data.iterrows():
 prob_of_approved_overall = sum(total_approved.values())/sum(totals.values())
 print(f'P(Approved|Overall) = {prob_of_approved_overall}\n')
 
+###############################################################################
+# There appears to be a issue with this loop. You have 7,140 in the total
+# column, but there are only 2,380 observations. Also, the logic is setting 
+# them all to approved, yielding probability of 1 for approval
+###############################################################################
+
 """
 ##################################################
 #
@@ -146,6 +167,8 @@ def create_output_dataframe() -> pd.DataFrame:
 
 output_df = create_output_dataframe()
 print(f'{output_df.to_string(index=False)}\n')
+
+
 
 """
 ##################################################
