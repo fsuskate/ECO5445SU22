@@ -16,13 +16,16 @@ knitr::opts_chunk$set(echo = TRUE)
 
 2. Repeat questions 2 and 5 from Assignment 02, but using R instead of Python
 
-* Question 2 from Assignment02
+# Question 2 from Assignment02
+
 ```{r}
-intTwo = 2
+intTwo = 2 
 floatTwo = 2.0
-mixed = "10j"
+mixed = "10j" # Did you try without the quotes?
 aString = "2 Cool for School"
-aBool = TRUE
+aBool = TRUE # Did you try it as True instead?
+
+# Careful, be sure to assign variables with the " <- " operator. Can run into issues if in some cases.
 
 print(typeof(intTwo))
 print(typeof(floatTwo))
@@ -31,8 +34,11 @@ print(typeof(aString))
 print(typeof(aBool))
 ```
 
-* Question 5 from Assignment02
+# Question 5 from Assignment02
 ```{r}
+
+# Did not provide description or examples, errors out if character is provided in function. (-6)*
+
 foobar <- function(value) {
   if (value %% 15 == 0) {
     result <- "foobar"
@@ -53,17 +59,20 @@ foobar(3)
 foobar(15)
 foobar(60)
 foobar(-5)
+#foobar("cat")
 ```
 3. Bring in the dataset "swiss" (details about dataset here: swiss function - RDocumentation) (Links to an external site.) Provide the summary statistics for all the variables
 ```{r}
 attach(swiss)
 summary(swiss)
+# Missing spread measures (sd or variance) (-5)
 detach(swiss)
 ```
 4. Which Province has the highest percent of males involved in agriculture as their occupation?
 ```{r}
 attach(swiss)
-ordered <- swiss[order(swiss$Agriculture), ]
+ordered <- swiss[order(swiss$Agriculture), ] # This sorts from lowest to highest.
+
 ordered
 View(ordered)
 ```
