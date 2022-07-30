@@ -55,6 +55,7 @@ plot(fixed_reg)
 par(mfrow=c(1,1))
 
 ```
+
 # Seperate Data into Testing and Training
 
 This time, I want you to separate your data into testing and training. For this exercise, randomly extract 100 for testing different models, and save the other 900 for training your models.

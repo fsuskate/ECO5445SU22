@@ -18,21 +18,23 @@ knitr::opts_chunk$set(echo = TRUE)
 library(plotly)
 ```
 
+# Overview
+
 In this final project, we will use R to evaluate logistic regression models with the objective of building a mortgage application approval/denial classifier. Of interest is modeling the probability that an applicant will be approved or denied as a function of observables to classify applicants as being likely to be approved or denied.
 
-# Importing Data
+# A. Importing and Cleaning the Data
 
-We downloaded the .csv file hmda.sw.csv from the GitHub repository and loaded it getting initial impressions of the data using the 'head' and 'summary' commands.
+The variables in the dataset do not have intuitive names (e.g., the meaning of S3 is unclear). Referencing the data description and the AER paper, identify the qualitative dependent that you will be modeling and the set of co-variates that you intend to include in your various models, and rename the variables so that they have (somewhat) intuitive names. Be certain that the debt-to-income ratio and the race, self-employed, marital status, and education indicator variables are included, among other variables.
+
+1.  We downloaded the .csv file hmda.sw.csv from the GitHub repository and loaded it getting initial impressions of the data using the 'head' and 'summary' commands.
 
 ```{r}
-df_model_data <- read.csv("data\\hmda_sw.csv")
-# head(df_model_data)
-# summary(df_model_data)
+applications <- read.csv("data\\hmda_sw.csv")
+head(applications)
+summary(applications)
 ```
 
-# Transform Data
-
-We gave the variables in the dataset intuitive names first referencing the data description and the AER paper.
+2.  Next, we transformed the dataset and gave the variables in the dataset intuitive names first referencing the data description and the AER paper. We made sure to replace missing observations with the value of 999999.4 with a reasonable value.
 
 ```{r}
 MISSING_OBSERVATION = 999999.4
@@ -68,135 +70,116 @@ for (i in seq(1,length(COLUMN_MAPPING))){
   col_name_map <- COLUMN_MAPPING[i]
   col_name <- names(col_name_map)
   print(paste("Renaming column: ", col_name, " to: ", col_name_map))
-  names(df_model_data)[names(df_model_data) == col_name] <- col_name_map
+  names(applications)[names(applications) == col_name] <- col_name_map
 }
 
-df_model_data <- subset(df_model_data, select = COLUMN_NAMES)
-head(df_model_data)
+applications <- subset(applications, select = COLUMN_NAMES)
+head(applications)
 
 ```
 
-# Clean the Data before Interpretation
+3.  It was necessary to clean the data before Interpretation
+
+<!-- -->
 
 a.  Set all MISSING_OBSERVATION values to 0 to make data easier to work with
 
 ```{r}
-df_model_data$'Years of Education'[which(df_model_data$`Years of Education` == MISSING_OBSERVATION)] <- 0
+applications$'Years of Education'[which(applications$`Years of Education` == MISSING_OBSERVATION)] <- 0
 ```
 
-b.  Set type of action to either just approved/not approved
+b.  Set type of action to a categorical factor and introduce approved column
 
 ```{r}
-df_model_data$'Type of Action Taken'[which(df_model_data$'Type of Action Taken' <= ActionTypes['APP_APPROVED_NOT_ACCEPTED'])] <- 1
-df_model_data$'Type of Action Taken'[which(df_model_data$'Type of Action Taken' > ActionTypes['APP_APPROVED_NOT_ACCEPTED'])] <- 0
+applications$`Type of Action Taken` <- factor(applications$`Type of Action Taken`, 
+                                               levels=c(1,2,3), 
+                                               labels=c('originated', 'approved_not_accepted', 'denied'))
 
+applications$'Approved' <- 0
+applications$'Approved'[applications$'Type of Action Taken' == 'originated' | 
+                           applications$'Type of Action Taken' == 'approved_not_accepted'] <- 1
+applications$'Approved'[applications$'Type of Action Taken' == 'denied'] <- 0
+applications$Approved
+applications$Approved <- factor(applications$Approved, 
+                                 levels=c(0,1), 
+                                 labels=c('denied', 'approved'))
+head(applications)
 ```
 
-c.  Convert marital status to an integer data type
+c.  Convert race, marital status, and self employed to a categorical factor
 
 ```{r}
-df_model_data$'Marital Status'[which(df_model_data$'Marital Status' == 'M')] <- 1
-df_model_data$'Marital Status'[which(df_model_data$'Marital Status' == 'U')] <- 0
-df_model_data$'Marital Status'[which(df_model_data$'Marital Status' == 'S')] <- 2
-df_model_data$'Marital Status'[which(df_model_data$'Marital Status' == 'NA')] <- -1
-df_model_data$'Marital Status' <- as.numeric(df_model_data$`Marital Status`)
+applications$`Race` <- factor(applications$`Race`,
+                                               levels=c(3,5), 
+                                               labels=c('black','white'))
+
+applications$`Marital Status` <- factor(applications$`Marital Status`,
+                                               levels=c('M','U','S'), 
+                                               labels=c('married', 'unmarried', 'seperated'))
+
+applications$`Self Employed` <- factor(applications$`Self Employed`,
+                                               levels=c(0,1), 
+                                               labels=c('not_self_employed', 'self_employed'))
 ```
 
-d.  Get rid of huge outliers in dept to income
+d.  Introduce new column to make 
 
 ```{r}
-df_model_data$'Dept to Income'[which(df_model_data$'Dept to Income' > 100.0)] <- mean(df_model_data$'Dept to Income')
+applications$'Dept to Income'[which(applications$'Dept to Income' > 100.0)] <- mean(applications$'Dept to Income')
 ```
 
-# Generate Summary Statitics
+# B. Generate Summary Statistics
+
+Generate summary statistics on the set of variables selected in A, and explain the composition of the sample and of the characteristics of an average (representative) applicant. In the process, you should also generate and histograms and frequency counts on particular variables of interest, which can be referenced in your explanation of the composition of the sample and of a representative applicant.
 
 a.  Get and display summary statistics
 
 ```{r}
-sum_stats = summary(df_model_data)
+sum_stats = summary(applications)
 print(sum_stats)
 ```
 
-b.  Generate default histograms
+b.  Generate default histograms for quantitative columns. Exclude all categorical columns.
 
 ```{r}
-par(mfrow = c(2,3))
-hist(df_model_data$Race)
-hist(df_model_data$`Marital Status`)
-hist(df_model_data$`Self Employed`)
-hist(df_model_data$`Dept to Income`)
-hist(df_model_data$`Years of Education`)
-hist(df_model_data$`Type of Action Taken`)
+par(mfrow = c(1,2))
+hist(applications$`Dept to Income`)
+hist(applications$`Years of Education`)
 par(mfrow = c(1,1))
 ```
 
 c.  Frequency Counts by Race
 
 ```{r}
-table(df_model_data$Race, df_model_data$'Marital Status')
-table(df_model_data$Race, df_model_data$`Years of Education`)
-table(df_model_data$Race, df_model_data$`Self Employed`)
-table(df_model_data$Race, df_model_data$`Dept to Income`)
-table(df_model_data$Race, df_model_data$`Type of Action Taken`)
+table(applications$Race, applications$'Marital Status')
+table(applications$Race, applications$`Years of Education`)
+table(applications$Race, applications$`Self Employed`)
+table(applications$Race, applications$`Dept to Income`)
+table(applications$Race, applications$`Type of Action Taken`)
 ```
 
 ```{r}
 par(mfrow=c(2,3))
-hist(table(df_model_data$Race))
-hist(table(df_model_data$'Marital Status'))
-hist(table(df_model_data$`Years of Education`))
-hist(table(df_model_data$`Self Employed`))
-hist(table(df_model_data$`Dept to Income`))
-hist(table(df_model_data$`Type of Action Taken`))
+hist(table(applications$Race))
+hist(table(applications$'Marital Status'))
+hist(table(applications$`Years of Education`))
+hist(table(applications$`Self Employed`))
+hist(table(applications$`Dept to Income`))
+hist(table(applications$`Type of Action Taken`))
 par(mfrow=c(1,1))
 ```
-A representative applicant is married, white, not self-employed, with 15 years of education and a dept to income ratio of 25.
 
-2)  Scatterplots for relationships between all quantitative variables
+Here we discuss a representative sample applicant. A representative applicant is married, white, not self-employed, with 15 years of education and a dept to income ratio of 25.
 
-\*\* Sale price against all quantitative variables
+# C. Logistic Regression Model
 
-```{r}
-plot_ly(prop_prices, y = ~sale_def, x = ~area, type = 'scatter')
-plot_ly(prop_prices, y = ~sale_def, x = ~area_heated, type = 'scatter')
-plot_ly(prop_prices, y = ~sale_def, x = ~bed, type = 'scatter')
-plot_ly(prop_prices, y = ~sale_def, x = ~dist_cbd, type = 'scatter')
-plot_ly(prop_prices, y = ~sale_def, x = ~dist_lakes, type = 'scatter')
-plot_ly(prop_prices, y = ~sale_def, x = ~bath, type = 'scatter')
+With the full sample, estimate the logistic regression model, where the deny/approve dummy variable is the response variable and the debt-to-income ratio and the race, self-employed, marital status, and education indicator variables are the co-variates. Graph the ROC curve and calculate the AUC. Also, compute the confusion matrix at alternative cut-off levels, and calculate the classifier sensitivity, specificity, the false-positive rate, the false-negative rate, the model accuracy and error rate to confirm they are the same as those produced by R. Provide a written explanation summarizing the findings.
 
-plot(prop_prices$area_heated, prop_prices$sale_def)
-abline(lm(sale_def ~ area_heated, data=prop_prices))
+########################################################################################################## 
 
-plot(prop_prices$area, prop_prices$sale_def)
-abline(lm(sale_def ~ area, data=prop_prices))
+a. Regression Analysis
 
-plot(prop_prices$bed, prop_prices$sale_def)
-abline(lm(sale_def ~ bed, data=prop_prices))
-
-plot(prop_prices$dist_cbd, prop_prices$sale_def)
-abline(lm(sale_def ~ dist_cbd, data=prop_prices))
-
-plot(prop_prices$dist_lakes, prop_prices$sale_def)
-abline(lm(sale_def ~ dist_lakes, data=prop_prices))
-
-plot(prop_prices$bath, prop_prices$sale_def)
-abline(lm(sale_def ~ bath, data=prop_prices))
-
-```
-
-# Summary Statistics
-
-Provide basic summary statistics for univariate analysis. Also, provide the correlation between all the quantitative variables.
-
-```{r}
-summary(prop_prices)
-cor(prop_prices)
-
-```
-
-# Regression Analysis
-
-Run a regression with all the variables included. Print results of the regression.
+Here we run create a logistic regression with response variable being the approved/denied column and the using all other variables as co-variates. Note the we use the shorthand formula notation '.' for including all other variables in the formula.
 
 ```{r}
 simple_reg = glm(sale_def ~ bed + bath + area + area_heated + dist_cbd + dist_lakes + pool + lake_front + downtown + luxury, data=prop_prices)
