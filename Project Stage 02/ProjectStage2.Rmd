@@ -16,6 +16,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r packages}
 # Add any packages you want in this chunk:
 library(plotly)
+library(pROC)
+
 ```
 
 # Overview
@@ -166,35 +168,105 @@ table(applications$Race, applications$`Type of Action Taken`, dnn = c('Race', 'T
 
 ```
 
+d.  Histograms of quantitative data columns
+
 ```{r}
-par(mfrow=c(2,3))
-hist(table(applications$Race))
-hist(table(applications$'Marital Status'))
+par(mfrow=c(1,2))
 hist(table(applications$`Years of Education`))
-hist(table(applications$`Self Employed`))
 hist(table(applications$`Dept to Income`))
-hist(table(applications$`Type of Action Taken`))
 par(mfrow=c(1,1))
 ```
 
-Here we discuss a representative sample applicant. A representative applicant is married, white, not self-employed, with 15 years of education and a dept to income ratio of 25.
+Here we discuss a representative sample applicant. A representative applicant is married, white, not self-employed, with 15 years of education and a dept to income ratio of 25 making them low risk applicant of which most where approved.
 
 # C. Logistic Regression Model
 
 With the full sample, estimate the logistic regression model, where the deny/approve dummy variable is the response variable and the debt-to-income ratio and the race, self-employed, marital status, and education indicator variables are the co-variates. Graph the ROC curve and calculate the AUC. Also, compute the confusion matrix at alternative cut-off levels, and calculate the classifier sensitivity, specificity, the false-positive rate, the false-negative rate, the model accuracy and error rate to confirm they are the same as those produced by R. Provide a written explanation summarizing the findings.
 
-########################################################################################################## 
+a.  Logistic Regression Analysis
 
-a. Regression Analysis
-
-Here we run create a logistic regression with response variable being the approved/denied column and the using all other variables as co-variates. Note the we use the shorthand formula notation '.' for including all other variables in the formula.
+Here we run create a logistic regression with response variable being the approved/denied column and the using all other variables as co-variates.
 
 ```{r}
-simple_reg = glm(sale_def ~ bed + bath + area + area_heated + dist_cbd + dist_lakes + pool + lake_front + downtown + luxury, data=prop_prices)
-summary(simple_reg) 
-coef(simple_reg) 
+fit.logit <- glm(applications$Approved ~ applications$Risk + 
+                  applications$Race + 
+                  applications$`Self Employed` + 
+                  applications$`Marital Status` + 
+                  applications$`Years of Education`, 
+                data=applications, 
+                family = 'binomial')
+summary(fit.logit) 
+coef(fit.logit) 
 
 ```
+
+b. Train and Validate a Classifier and then Graph the ROC
+
+```{r}
+set.seed(1234)
+
+train <- sample(nrow(applications), 0.7*nrow(applications))
+
+applications.train <- applications[train,]
+applications.validate <- applications[-train,]
+
+table(applications.train$Approved)
+summary(applications.validate$Approved)
+
+# Fit the model on the trained data with variables from the validation dataframe
+fit.logit.trained <- glm(applications.validate$Approved ~ applications.validate$Risk + applications.validate$Race + applications.validate$`Self Employed` + applications.validate$`Marital Status`, data=applications.train, family = 'binomial')
+
+summary(fit.logit.trained)
+
+probability <- predict(fit.logit.trained, applications.validate, type = 'response')
+
+logit.predicted <- factor(probability > 0.75, levels = c(FALSE,TRUE),
+                     labels = c("approved","denied"))
+
+logit.perf <- table(applications.validate$Approved, logit.predicted, dnn = c("Actual","Predicted"))
+
+logit.perf
+
+my_roc <- roc(applications.validate$Approved ~ probability, plot = TRUE)
+```
+
+# D. Validation Techniques
+
+Next, using 10-fold cross validation, estimate a variety of logistic regression models and evaluate their predictive performance across a range of threshold values in each case. The models can (should) include interaction variables and polynomial terms (e.g., quadratic and cubic variables). Of interest is identifying the model and threshold value that yield the smallest average test mis-classification rate; however, you can also calculate model accuracy and the AUC. Document in a table the performance of the various models using the chosen performance measures.
+
+```{r}
+```
+
+# E. Identify the Superior Model
+
+Of the competing models that you estimated and thresholds that you evaluated, identify the superior model for classification purposes. Re-estimate the model with the full sample of data. Then, graph the ROC, calculate the AUC, and compute the confusion matrix at the threshold level associated with the minimum average test mis-classification rate . Calculate the classifier sensitivity and specificity, the false-positive rate, the false negative rate, the accuracy, and overall mis-classification rate. How well does your superior model perform relative to the model estimated in C? Explain. Note that to do so you will need to calculate the confusion matrix from the estimated model in C at the threshold level.
+
+```{r}
+```
+
+# F. Summarize Modeling Efforts
+
+Upload an error-free and well-organized copy of your program and a report that summarizes your modeling efforts and the discussion/explanation of your findings from B, C, D, and E. Be certain to include a table describing the results from the various models you evaluated, and be certain to include the estimation results from your superior model estimated with the full dataset.
+
+```{r}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+########################################################################################################## 
 
 Which of the variables tested significant at the 95% level? Looking at the results and answering outside of the chunk is sufficient.
 
