@@ -227,8 +227,64 @@ logit.perf <- table(applications.validate$Approved, logit.predicted, dnn = c("Ac
 
 logit.perf
 
-my_roc <- roc(applications.validate$Approved ~ probability, plot = TRUE)
+# Graph ROC
+applications_roc <- roc(applications.validate$Approved ~ probability, plot = TRUE)
+
+# Calculate Area Under Curve
+auc(applications_roc)
 ```
+
+c. Find threshold that maximizes the sensitivity and specificity by pulling it from the ROC object.
+
+```{r}
+coords(applications_roc, "best", ret = "threshold")
+coords(applications_roc)
+
+# or
+
+threshold <- applications_roc$thresholds[which.max(applications_roc$sensitivities + applications_roc$specificities)]
+```
+
+d. Use the best threshold
+
+```{r}
+logit.predicted.thresh <- factor(probability > threshold, levels = c(FALSE,TRUE),
+                     labels = c("approved","denied"))
+
+logit.perf.thresh <- table(applications.validate$Approved, logit.predicted.thresh, dnn = c("Actual","Predicted"))
+
+logit.perf.thresh
+```
+e. Introduce Performance method from 'R in Action' to get the sensitivity, specificity, the false-positive rate, the false-negative rate, the model accuracy and error rate.
+
+```{r}
+performance <- function(table, n = 4){
+  if(!all(dim(table) == c(2,2)))
+    stop("Must be a 2 x 2 table")
+  tn = table[1,1]
+  fp = table[1,2]
+  fn = table[2,1]
+  tp = table[2,2]
+  sensitivity = tp/(tp+fn)
+  specificity = tn/(tn+fp)
+  ppp = tp/(tp+fp)
+  npp = tn/(tn+fp)
+  hitrate = (tp+tn)/(tp+tn+fp+fn)
+  result <- paste0("Sensitivity = ", round(sensitivity,n),
+                   "\nSpecificity = ",round(specificity,n),
+                   "\nPositive Predictive Value = ", round(ppp,n),
+                   "\nNegative Predictive Value = ", round(npp,n),
+                   "\nAccuracy = ", round(hitrate,n))
+  cat(result)
+}
+```
+
+```{r}
+performance(logit.perf)
+performance(logit.perf.thresh)
+
+```
+f. TODO: PROVIDE A WRITTEN EXPLANATION OF THE FINDINGS!!!!!!
 
 # D. Validation Techniques
 
@@ -249,92 +305,4 @@ Of the competing models that you estimated and thresholds that you evaluated, id
 Upload an error-free and well-organized copy of your program and a report that summarizes your modeling efforts and the discussion/explanation of your findings from B, C, D, and E. Be certain to include a table describing the results from the various models you evaluated, and be certain to include the estimation results from your superior model estimated with the full dataset.
 
 ```{r}
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-########################################################################################################## 
-
-Which of the variables tested significant at the 95% level? Looking at the results and answering outside of the chunk is sufficient.
-
-Answer: Pool tested significant at the 95% confidence level.
-
-## Evaluating the model
-
-As is, are any of the Gauss-Markov assumptions violated? If so, which ones? How can you fix the issues?
-
-Using the plot of the regression model to test for Guass-Markov violations.
-
-The Residuals vs Fitted plot shows that there is increasing variance as price increases indicating bias which violates assumption 1. This plot also show that there is no linearity which is also a violation.
-
-The Q-Q plot does not show a diagnol line indicating that the data is not normally distributed.
-
-```{r}
-
-plot(simple_reg)
-
-```
-
-## New Model
-
-Based off of your findings in the previous section, make changes to the variables, the functional form, etc.
-
-```{r}
-# Try removing outliers
-normalized <- subset(prop_prices, prop_prices$sale_def < 1000000)
-
-# Use only the most significant variables in the formula
-fixed_reg = glm(sale_def ~ bed + area_heated + lake_front + luxury, data=normalized)
-summary(fixed_reg) 
-coef(fixed_reg) 
-plot(fixed_reg)
-# Looking at the plots, it seems like a better fit
-
-# Try using log of large values to even the playing field
-fixed_reg2 = glm(log(sale_def) ~ bed + log(area_heated) + lake_front + luxury, data=normalized)
-summary(fixed_reg2) 
-coef(fixed_reg2) 
-plot(fixed_reg2)
-
-```
-
-# Prediction
-
-Based on the following inputs, predict the deflated sales price:
-
--   2 bed
--   2 bath
--   area_heated = 1223
--   area = 9750
--   dist_cbd = 19368
--   dist_lakes = 490
--   no pool
-
-```{r}
-# Using basic model
-new_house_df <- data.frame(bed=2,bath=2,area_heated=1223,area=9750,dist_cbd=19368,dist_lakes=490,pool=0,lake_front=0,luxury=0)
-basic_linear_model <- lm(formula = sale_def ~ bed + bath + area + area_heated + dist_cbd + 
-    dist_lakes + pool, data = prop_prices)
-predict(basic_linear_model, newdata=new_house_df)
-
-# Now using fixed models
-predict(fixed_reg, newdata=new_house_df)
-
-# Need to take e^predication since fixed_reg2 is based on logs
-exp(predict(fixed_reg2, newdata=new_house_df))
-
-
 ```
