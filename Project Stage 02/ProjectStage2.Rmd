@@ -122,10 +122,16 @@ applications$`Self Employed` <- factor(applications$`Self Employed`,
                                                labels=c('not_self_employed', 'self_employed'))
 ```
 
-d.  Introduce new column to make 
+d.  Introduce new column to categorize applicants as having low, med, high risk DTI
 
 ```{r}
-applications$'Dept to Income'[which(applications$'Dept to Income' > 100.0)] <- mean(applications$'Dept to Income')
+applications$Risk <- applications$'Dept to Income'
+applications$'Risk'[applications$'Risk' <= 28] <- 0
+applications$'Risk'[applications$'Risk' > 28 & applications$'Risk' < 43] <- 1
+applications$'Risk'[applications$'Risk' > 43] <- 2
+applications$'Risk' <- factor(applications$Risk, 
+                              levels=c(0,1,2),
+                              labels=c('low', 'med', 'high'))
 ```
 
 # B. Generate Summary Statistics
@@ -151,11 +157,13 @@ par(mfrow = c(1,1))
 c.  Frequency Counts by Race
 
 ```{r}
-table(applications$Race, applications$'Marital Status')
-table(applications$Race, applications$`Years of Education`)
-table(applications$Race, applications$`Self Employed`)
-table(applications$Race, applications$`Dept to Income`)
-table(applications$Race, applications$`Type of Action Taken`)
+table(applications$Race, applications$'Marital Status', dnn = c('Race', 'Marital Status'))
+table(applications$Race, applications$`Years of Education`, dnn = c('Race', 'Years of Education'))
+table(applications$Race, applications$`Self Employed`, dnn = c('Race', 'Self Employed'))
+#table(applications$Race, applications$`Dept to Income`, dnn = c('Race', 'DTI'))
+table(applications$Race, applications$`Risk`, dnn = c('Race', 'Risk'))
+table(applications$Race, applications$`Type of Action Taken`, dnn = c('Race', 'Type of Action'))
+
 ```
 
 ```{r}
