@@ -19,6 +19,8 @@ library(plotly)
 library(pROC)
 library(knitr)
 library(caret)
+library(glmnet)
+library(gamlr)
 
 ```
 
@@ -92,10 +94,12 @@ head(applications)
 
 It was necessary to clean the data before Interpretation
 
-#### a. Set all MISSING_OBSERVATION values to 0 to make data easier to work with
+#### a. Set all MISSING_OBSERVATION values to 0 to make data easier to work with, replace all NA with a reasonable value
 
 ```{r}
 applications$'Years of Education'[which(applications$`Years of Education` == MISSING_OBSERVATION)] <- 0
+
+# applications[which(is.na(applications), arr.ind = TRUE)] <- 1
 ```
 
 #### b. Set type of action to a categorical factor and introduce approved column
@@ -124,6 +128,7 @@ applications$`Race` <- factor(applications$`Race`,
 applications$`Marital Status` <- factor(applications$`Marital Status`,
                                                levels=c('M','U','S'), 
                                                labels=c('married', 'unmarried', 'seperated'))
+applications[which(is.na(applications$`Marital Status`), arr.ind=TRUE),2] <- 'unmarried' 
 
 applications$`Self Employed` <- factor(applications$`Self Employed`,
                                                levels=c(0,1), 
@@ -140,6 +145,7 @@ applications$'Risk'[applications$'Risk' > 43] <- 2
 applications$'Risk' <- factor(applications$Risk, 
                               levels=c(0,1,2),
                               labels=c('low', 'med', 'high'))
+applications[which(is.na(applications$`Risk`), arr.ind=TRUE),8] <- 'med' 
 ```
 
 # B. Generate Summary Statistics
@@ -300,43 +306,11 @@ performance(logit.perf.thresh)
 *"Next, using 10-fold cross validation, estimate a variety of logistic regression models and evaluate their predictive performance across a range of threshold values in each case. The models can (should) include interaction variables and polynomial terms (e.g., quadratic and cubic variables). Of interest is identifying the model and threshold value that yield the smallest average test mis-classification rate; however, you can also calculate model accuracy and the AUC. Document in a table the performance of the various models using the chosen performance measures."*
 
 ```{r}
+training_response <- data.matrix(applications$Approved)
+training_data_matrix <- data.matrix(applications[ , c('Race','Risk','Marital Status','Self Employed', 'Years of Education')])
+result <- gamlr(training_data_matrix, as.factor(training_response), verb=TRUE, family='binomial')
+plot(result)
 
-#specify the cross-validation method
-ctrl <- trainControl(method = "cv", number = 10)
-
-#fit a regression model and use k-fold CV to evaluate performance
-model <- train(applications$Approved ~ applications$Race, data = applications, method = "lm", trControl = ctrl)
-
-#view summary of k-fold CV               
-print(model)
-
-
-# Copied from Chapter 8 - Regression of R in Action, Second Edition
-shrinkage <- function(fit, k=10){
-  require(bootstrap)
-
-  theta.fit <- function(x,y){
-    print(x)
-    lsfit(x,y)
-  }
-  theta.predict <- function(fit,x){cbind(1,x)%*%fit$coef}
-
-  x <- fit$model[,2:ncol(fit$model)]
-  y <- fit$model[,1]
-
-  results <- crossval(x, y, theta.fit, theta.predict, ngroup=k)
-  r2 <- cor(y, fit$fitted.values)^2
-  r2cv <- cor(y, results$cv.fit)^2
-  cat("Original R-square =", r2, "\n")
-  cat(k, "Fold Cross-Validated R-square =", r2cv, "\n")
-  cat("Change =", r2-r2cv, "\n")
-}
-
-fit1 <- glm(applications$Approved ~ applications$`Years of Education`, 
-                data=applications, 
-                family = 'binomial')
-
-shrinkage(fit1)
 ```
 
 # E. Identify the Superior Model
