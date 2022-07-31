@@ -1539,10 +1539,11 @@ models, and rename the variables so that they have (somewhat) intuitive
 names. Be certain that the debt-to-income ratio and the race,
 self-employed, marital status, and education indicator variables are
 included, among other variables.”</em></p>
-<div id="we-downloaded-the-.csv-file-hmda.sw.csv-from-the-github-repository-and-loaded-it-getting-initial-impressions-of-the-data-using-the-head-and-summary-commands." class="section level3">
-<h3>1. We downloaded the .csv file hmda.sw.csv from the GitHub
-repository and loaded it getting initial impressions of the data using
-the ‘head’ and ‘summary’ commands.</h3>
+<div id="load-datasets." class="section level3">
+<h3>1. Load Datasets.</h3>
+<p>We downloaded the .csv file hmda.sw.csv from the GitHub repository
+and loaded it getting initial impressions of the data using the ‘head’
+and ‘summary’ commands.</p>
 <pre class="r"><code>applications &lt;- read.csv(&quot;data\\hmda_sw.csv&quot;)
 head(applications)</code></pre>
 <pre><code>##   seq s3 s4 s5  s6 s7   s9 s11 s13 s14 s15 s16 s17 s18 s19a s19b s19c s19d s20
@@ -1703,11 +1704,12 @@ head(applications)</code></pre>
 ##  Max.   :0  
 ## </code></pre>
 </div>
-<div id="next-we-transformed-the-dataset-and-gave-the-variables-in-the-dataset-intuitive-names-first-referencing-the-data-description-and-the-aer-paper.-we-made-sure-to-replace-missing-observations-with-the-value-of-999999.4-with-a-reasonable-value." class="section level3">
-<h3>2. Next, we transformed the dataset and gave the variables in the
+<div id="perform-transformations." class="section level3">
+<h3>2. Perform Transformations.</h3>
+<p>Next, we transformed the dataset and gave the variables in the
 dataset intuitive names first referencing the data description and the
 AER paper. We made sure to replace missing observations with the value
-of 999999.4 with a reasonable value.</h3>
+of 999999.4 with a reasonable value.</p>
 <pre class="r"><code>MISSING_OBSERVATION = 999999.4
 
 COLUMN_NAMES &lt;- c(
@@ -1766,8 +1768,9 @@ head(applications)</code></pre>
 ## 5                    1
 ## 6                    1</code></pre>
 </div>
-<div id="it-was-necessary-to-clean-the-data-before-interpretation" class="section level3">
-<h3>3. It was necessary to clean the data before Interpretation</h3>
+<div id="clean-data" class="section level3">
+<h3>3. Clean Data</h3>
+<p>It was necessary to clean the data before Interpretation</p>
 <div id="a.-set-all-missing_observation-values-to-0-to-make-data-easier-to-work-with" class="section level4">
 <h4>a. Set all MISSING_OBSERVATION values to 0 to make data easier to
 work with</h4>
