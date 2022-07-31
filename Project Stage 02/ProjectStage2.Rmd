@@ -300,6 +300,17 @@ performance(logit.perf.thresh)
 *"Next, using 10-fold cross validation, estimate a variety of logistic regression models and evaluate their predictive performance across a range of threshold values in each case. The models can (should) include interaction variables and polynomial terms (e.g., quadratic and cubic variables). Of interest is identifying the model and threshold value that yield the smallest average test mis-classification rate; however, you can also calculate model accuracy and the AUC. Document in a table the performance of the various models using the chosen performance measures."*
 
 ```{r}
+
+#specify the cross-validation method
+ctrl <- trainControl(method = "cv", number = 10)
+
+#fit a regression model and use k-fold CV to evaluate performance
+model <- train(applications$Approved ~ applications$Race, data = applications, method = "lm", trControl = ctrl)
+
+#view summary of k-fold CV               
+print(model)
+
+
 # Copied from Chapter 8 - Regression of R in Action, Second Edition
 shrinkage <- function(fit, k=10){
   require(bootstrap)
@@ -321,15 +332,11 @@ shrinkage <- function(fit, k=10){
   cat("Change =", r2-r2cv, "\n")
 }
 
-fit1 <- glm(applications$Approved ~ applications$Risk + 
-                  applications$Race + 
-                  applications$`Self Employed` + 
-                  applications$`Marital Status` + 
-                  applications$`Years of Education`, 
+fit1 <- glm(applications$Approved ~ applications$`Years of Education`, 
                 data=applications, 
                 family = 'binomial')
 
-shrinkage(fit.logit)
+shrinkage(fit1)
 ```
 
 # E. Identify the Superior Model
