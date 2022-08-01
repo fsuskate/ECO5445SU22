@@ -86,11 +86,12 @@ par(mfrow=c(1,1))
 With the same model in part 2, run the standard LASSO regression model on the training data.
 
 ```{r}
-training_response <- training_df$sale_def
+training_response <- data.matrix(training_df$sale_def)
 training_data_matrix <- data.matrix(training_df[ , c('bed','area_heated','lake_front','luxury')])
 result <- gamlr(training_data_matrix, log(training_response), verb=TRUE)
 
 summary(result)
+coef(result)
 
 plot(result) ## path plot
 ```
