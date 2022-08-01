@@ -40,6 +40,7 @@ We downloaded the .csv file hmda.sw.csv from the GitHub repository and loaded it
 
 ```{r}
 applications <- read.csv("data\\hmda_sw.csv")
+applications <- as.data.frame(applications)
 head(applications)
 summary(applications)
 ```
