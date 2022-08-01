@@ -284,22 +284,23 @@ performance <- function(table, n = 4){
   ppp = tp/(tp+fp)
   npp = tn/(tn+fp)
   hitrate = (tp+tn)/(tp+tn+fp+fn)
-  result <- paste0("Sensitivity = ", round(sensitivity,n),
+  result <- paste0("\nSensitivity = ", round(sensitivity,n),
                    "\nSpecificity = ",round(specificity,n),
                    "\nPositive Predictive Value = ", round(ppp,n),
                    "\nNegative Predictive Value = ", round(npp,n),
-                   "\nAccuracy = ", round(hitrate,n))
+                   "\nAccuracy = ", round(hitrate,n), "\n")
   cat(result)
 }
 ```
 
 ```{r}
 performance(logit.perf)
+
 performance(logit.perf.thresh)
 
 ```
 
-### f. TODO: PROVIDE A WRITTEN EXPLANATION OF THE FINDINGS!!!!!!
+### f. The predictive accurracy of the original model was low but the after using the best threshold the predictive accuracy was actually lowered. 
 
 # D. Validation Techniques
 
@@ -310,20 +311,38 @@ performance(logit.perf.thresh)
 
 training_response <- data.matrix(applications$Approved)
 training_data_matrix <- data.matrix(applications[ , c('Race','Risk','Marital Status','Self Employed', 'Years of Education')])
-result <- gamlr(training_data_matrix, as.factor(training_response),  verb=TRUE, family='binomial')
-plot(result)
+result_reg <- gamlr(training_data_matrix, as.factor(training_response),  verb=TRUE, family='binomial')
+plot(result_reg)
 ```
 
 ### b. Perform 10 fold cross validation
 ```{r}
-cv.result <- cv.gamlr(training_data_matrix, as.factor(training_response), verb=TRUE,nfold =10)
-beta1se <- coef(cv.result) ## 1se rule; see ?cv.gamlr
-betamin <- coef(cv.result, select="min") ## min cv selection
+cv.result_reg <- cv.gamlr(training_data_matrix, as.factor(training_response), verb=TRUE,nfold =10)
+beta1se <- coef(cv.result_reg) ## 1se rule; see ?cv.gamlr
+betamin <- coef(cv.result_reg, select="min") ## min cv selection
 
 par(mfrow=c(1,2))
-plot(cv.result)
-plot(cv.result$gamlr) ## cv.gamlr includes a gamlr object
+plot(cv.result_reg)
+plot(cv.result_reg$gamlr) ## cv.gamlr includes a gamlr object
+par(mfrow=c(1,2))
 
+```
+### c. Compare model selections
+
+```{r}
+ll <- log(result_reg$lambda) ## the sequence of lambdas
+n <- nrow(applications)
+par(mfrow=c(1,2))
+plot(cv.result_reg)
+plot(ll, AIC(result_reg)/n, # scaled by the number of obs (n)
+	xlab="log lambda", ylab="IC/n", pch=21, bg="orange")
+abline(v=ll[which.min(AIC(result_reg))], col="orange", lty=3)
+abline(v=ll[which.min(BIC(result_reg))], col="green", lty=3)
+abline(v=ll[which.min(AICc(result_reg))], col="black", lty=3)
+points(ll, BIC(result_reg)/n, pch=21, bg="green")
+points(ll, AICc(result_reg)/n, pch=21, bg="black")
+legend("topleft", bty="n",
+	fill=c("black","orange","green"),legend=c("AICc","AIC","BIC"))
 ```
 
 # E. Identify the Superior Model
