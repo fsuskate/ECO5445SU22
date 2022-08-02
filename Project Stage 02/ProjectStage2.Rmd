@@ -504,7 +504,7 @@ o. Prediction and Performance of Tuned Model
 ```{r}
 svm.pred <- predict(fit.svm,na.omit(applications.validate))
 
-svm.perf <- table(na.omit(applications.validate)$class, svm.pred, dnn = c("Actual","Predicted"))
+svm.perf <- table(na.omit(applications.validate)$Approved, svm.pred, dnn = c("Actual","Predicted"))
 
 ```
 
