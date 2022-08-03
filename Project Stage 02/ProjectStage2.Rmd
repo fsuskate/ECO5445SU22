@@ -6,33 +6,53 @@ output:
   html_document:
     toc: true
     toc_float: true
-    number_sections: true
+    theme: cerulean
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r packages}
+```{r packages, echo=FALSE, results='hide', message=FALSE}
 # Add any packages you want in this chunk:
 library(plotly)
+library(pROC)
+library(knitr)
+library(caret)
+library(glmnet)
+library(gamlr)
+library(rpart)
+library(rpart.plot)
+library(party)
+library(randomForest)
+library(e1071)
+
 ```
+
+# Overview
+
+![Cover Image](images/cover2.png)
 
 In this final project, we will use R to evaluate logistic regression models with the objective of building a mortgage application approval/denial classifier. Of interest is modeling the probability that an applicant will be approved or denied as a function of observables to classify applicants as being likely to be approved or denied.
 
-# Importing Data
+# A. Importing and Cleaning the Data
+
+*"The variables in the dataset do not have intuitive names (e.g., the meaning of S3 is unclear). Referencing the data description and the AER paper, identify the qualitative dependent that you will be modeling and the set of co-variates that you intend to include in your various models, and rename the variables so that they have (somewhat) intuitive names. Be certain that the debt-to-income ratio and the race, self-employed, marital status, and education indicator variables are included, among other variables."*
+
+### 1. Load Datasets. 
 
 We downloaded the .csv file hmda.sw.csv from the GitHub repository and loaded it getting initial impressions of the data using the 'head' and 'summary' commands.
 
 ```{r}
-df_model_data <- read.csv("data\\hmda_sw.csv")
-# head(df_model_data)
-# summary(df_model_data)
+applications <- read.csv("data\\hmda_sw.csv")
+applications <- as.data.frame(applications)
+head(applications)
+summary(applications)
 ```
 
-# Transform Data
+### 2. Perform Transformations.
 
-We gave the variables in the dataset intuitive names first referencing the data description and the AER paper.
+Next, we transformed the dataset and gave the variables in the dataset intuitive names first referencing the data description and the AER paper. We made sure to replace missing observations with the value of 999999.4 with a reasonable value.
 
 ```{r}
 MISSING_OBSERVATION = 999999.4
@@ -68,210 +88,462 @@ for (i in seq(1,length(COLUMN_MAPPING))){
   col_name_map <- COLUMN_MAPPING[i]
   col_name <- names(col_name_map)
   print(paste("Renaming column: ", col_name, " to: ", col_name_map))
-  names(df_model_data)[names(df_model_data) == col_name] <- col_name_map
+  names(applications)[names(applications) == col_name] <- col_name_map
 }
 
-df_model_data <- subset(df_model_data, select = COLUMN_NAMES)
-head(df_model_data)
+applications <- subset(applications, select = COLUMN_NAMES)
+head(applications)
 
 ```
 
-# Clean the Data before Interpretation
+### 3. Clean Data
 
-a.  Set all MISSING_OBSERVATION values to 0 to make data easier to work with
+It was necessary to clean the data before Interpretation
+
+#### a. Set all MISSING_OBSERVATION values to 0 to make data easier to work with, replace all NA with a reasonable value
 
 ```{r}
-df_model_data$'Years of Education'[which(df_model_data$`Years of Education` == MISSING_OBSERVATION)] <- 0
+applications$'Years of Education'[which(applications$`Years of Education` == MISSING_OBSERVATION)] <- 0
+
+# applications[which(is.na(applications), arr.ind = TRUE)] <- 1
 ```
 
-b.  Set type of action to either just approved/not approved
+#### b. Set type of action to a categorical factor and introduce approved column
 
 ```{r}
-df_model_data$'Type of Action Taken'[which(df_model_data$'Type of Action Taken' <= ActionTypes['APP_APPROVED_NOT_ACCEPTED'])] <- 1
-df_model_data$'Type of Action Taken'[which(df_model_data$'Type of Action Taken' > ActionTypes['APP_APPROVED_NOT_ACCEPTED'])] <- 0
+applications$`Type of Action Taken` <- factor(applications$`Type of Action Taken`, 
+                                               levels=c(1,2,3), 
+                                               labels=c('originated', 'approved_not_accepted', 'denied'))
 
+applications$'Approved' <- 0
+applications$'Approved'[applications$'Type of Action Taken' == 'originated' | 
+                           applications$'Type of Action Taken' == 'approved_not_accepted'] <- 1
+applications$'Approved'[applications$'Type of Action Taken' == 'denied'] <- 0
+applications$Approved <- factor(applications$Approved, 
+                                 levels=c(0,1), 
+                                 labels=c('denied', 'approved'))
 ```
 
-c.  Convert marital status to an integer data type
+#### c. Convert race, marital status, and self employed to a categorical factor
 
 ```{r}
-df_model_data$'Marital Status'[which(df_model_data$'Marital Status' == 'M')] <- 1
-df_model_data$'Marital Status'[which(df_model_data$'Marital Status' == 'U')] <- 0
-df_model_data$'Marital Status'[which(df_model_data$'Marital Status' == 'S')] <- 2
-df_model_data$'Marital Status'[which(df_model_data$'Marital Status' == 'NA')] <- -1
-df_model_data$'Marital Status' <- as.numeric(df_model_data$`Marital Status`)
+applications$`Race` <- factor(applications$`Race`,
+                                               levels=c(3,5), 
+                                               labels=c('black','white'))
+
+applications$`Marital Status` <- factor(applications$`Marital Status`,
+                                               levels=c('M','U','S'), 
+                                               labels=c('married', 'unmarried', 'seperated'))
+applications[which(is.na(applications$`Marital Status`), arr.ind=TRUE),2] <- 'unmarried' 
+
+applications$`Self Employed` <- factor(applications$`Self Employed`,
+                                               levels=c(0,1), 
+                                               labels=c('not_self_employed', 'self_employed'))
 ```
 
-d.  Get rid of huge outliers in dept to income
+#### d. Introduce new column to categorize applicants as having low, med, high risk DTI
 
 ```{r}
-df_model_data$'Dept to Income'[which(df_model_data$'Dept to Income' > 100.0)] <- mean(df_model_data$'Dept to Income')
+applications$Risk <- applications$'Dept to Income'
+applications$'Risk'[applications$'Risk' <= 28] <- 0
+applications$'Risk'[applications$'Risk' > 28 & applications$'Risk' < 43] <- 1
+applications$'Risk'[applications$'Risk' > 43] <- 2
+applications$'Risk' <- factor(applications$Risk, 
+                              levels=c(0,1,2),
+                              labels=c('low', 'med', 'high'))
+applications[which(is.na(applications$`Risk`), arr.ind=TRUE),8] <- 'med' 
 ```
 
-# Generate Summary Statitics
+# B. Generate Summary Statistics
 
-a.  Get and display summary statistics
+*"Generate summary statistics on the set of variables selected in A, and explain the composition of the sample and of the characteristics of an average (representative) applicant. In the process, you should also generate and histograms and frequency counts on particular variables of interest, which can be referenced in your explanation of the composition of the sample and of a representative applicant."*
+
+### a. Get and display summary statistics
 
 ```{r}
-sum_stats = summary(df_model_data)
+head(applications)
+sum_stats = summary(applications)
 print(sum_stats)
 ```
 
-b.  Generate default histograms
+### b. Generate default histograms for quantitative columns. Exclude all categorical columns.
 
 ```{r}
-par(mfrow = c(2,3))
-hist(df_model_data$Race)
-hist(df_model_data$`Marital Status`)
-hist(df_model_data$`Self Employed`)
-hist(df_model_data$`Dept to Income`)
-hist(df_model_data$`Years of Education`)
-hist(df_model_data$`Type of Action Taken`)
+par(mfrow = c(1,2))
+hist(applications$`Dept to Income`)
+hist(applications$`Years of Education`)
 par(mfrow = c(1,1))
 ```
 
-c.  Frequency Counts by Race
+### c. Frequency Counts by Race
 
 ```{r}
-table(df_model_data$Race, df_model_data$'Marital Status')
-table(df_model_data$Race, df_model_data$`Years of Education`)
-table(df_model_data$Race, df_model_data$`Self Employed`)
-table(df_model_data$Race, df_model_data$`Dept to Income`)
-table(df_model_data$Race, df_model_data$`Type of Action Taken`)
+kable(table(applications$Race, applications$'Marital Status', dnn = c('Race', 'Marital Status')))
+kable(table(applications$Race, applications$`Years of Education`, dnn = c('Race', 'Years of Education')))
+kable(table(applications$Race, applications$`Self Employed`, dnn = c('Race', 'Self Employed')))
+#table(applications$Race, applications$`Dept to Income`, dnn = c('Race', 'DTI'))
+kable(table(applications$Race, applications$`Risk`, dnn = c('Race', 'Risk')))
+kable(table(applications$Race, applications$`Type of Action Taken`, dnn = c('Race', 'Type of Action')))
+
 ```
 
+### d. Histograms of quantitative data columns
+
 ```{r}
-par(mfrow=c(2,3))
-hist(table(df_model_data$Race))
-hist(table(df_model_data$'Marital Status'))
-hist(table(df_model_data$`Years of Education`))
-hist(table(df_model_data$`Self Employed`))
-hist(table(df_model_data$`Dept to Income`))
-hist(table(df_model_data$`Type of Action Taken`))
+par(mfrow=c(1,2))
+hist(table(applications$`Years of Education`))
+hist(table(applications$`Dept to Income`))
 par(mfrow=c(1,1))
 ```
-A representative applicant is married, white, not self-employed, with 15 years of education and a dept to income ratio of 25.
 
-2)  Scatterplots for relationships between all quantitative variables
+Here we discuss a representative sample applicant. A representative applicant is married, white, not self-employed, with 15 years of education and a dept to income ratio of 25 making them low risk applicant of which most where approved.
 
-\*\* Sale price against all quantitative variables
+# C. Logistic Regression Model
+
+*"With the full sample, estimate the logistic regression model, where the deny/approve dummy variable is the response variable and the debt-to-income ratio and the race, self-employed, marital status, and education indicator variables are the co-variates. Graph the ROC curve and calculate the AUC. Also, compute the confusion matrix at alternative cut-off levels, and calculate the classifier sensitivity, specificity, the false-positive rate, the false-negative rate, the model accuracy and error rate to confirm they are the same as those produced by R. Provide a written explanation summarizing the findings."*
+
+### a. Logistic Regression Analysis
+
+Here we run create a logistic regression with response variable being the approved/denied column and the using all other variables as co-variates.
 
 ```{r}
-plot_ly(prop_prices, y = ~sale_def, x = ~area, type = 'scatter')
-plot_ly(prop_prices, y = ~sale_def, x = ~area_heated, type = 'scatter')
-plot_ly(prop_prices, y = ~sale_def, x = ~bed, type = 'scatter')
-plot_ly(prop_prices, y = ~sale_def, x = ~dist_cbd, type = 'scatter')
-plot_ly(prop_prices, y = ~sale_def, x = ~dist_lakes, type = 'scatter')
-plot_ly(prop_prices, y = ~sale_def, x = ~bath, type = 'scatter')
-
-plot(prop_prices$area_heated, prop_prices$sale_def)
-abline(lm(sale_def ~ area_heated, data=prop_prices))
-
-plot(prop_prices$area, prop_prices$sale_def)
-abline(lm(sale_def ~ area, data=prop_prices))
-
-plot(prop_prices$bed, prop_prices$sale_def)
-abline(lm(sale_def ~ bed, data=prop_prices))
-
-plot(prop_prices$dist_cbd, prop_prices$sale_def)
-abline(lm(sale_def ~ dist_cbd, data=prop_prices))
-
-plot(prop_prices$dist_lakes, prop_prices$sale_def)
-abline(lm(sale_def ~ dist_lakes, data=prop_prices))
-
-plot(prop_prices$bath, prop_prices$sale_def)
-abline(lm(sale_def ~ bath, data=prop_prices))
+fit.logit <- glm(applications$Approved ~ applications$Risk + 
+                  applications$Race + 
+                  applications$`Self Employed` + 
+                  applications$`Marital Status` + 
+                  applications$`Years of Education`, 
+                data=applications, 
+                family = 'binomial')
+summary(fit.logit) 
+coef(fit.logit) 
 
 ```
 
-# Summary Statistics
-
-Provide basic summary statistics for univariate analysis. Also, provide the correlation between all the quantitative variables.
+### b. Train and Validate a Classifier and then Graph the ROC
 
 ```{r}
-summary(prop_prices)
-cor(prop_prices)
+set.seed(1234)
+
+train <- sample(nrow(applications), 0.7*nrow(applications))
+
+applications.train <- applications[train,]
+applications.validate <- applications[-train,]
+
+table(applications.train$Approved)
+summary(applications.validate$Approved)
+
+# Fit the model on the trained data with variables from the validation dataframe
+fit.logit.trained <- glm(applications.validate$Approved ~ applications.validate$Risk + applications.validate$Race + applications.validate$`Self Employed` + applications.validate$`Marital Status`, data=applications.train, family = 'binomial')
+
+summary(fit.logit.trained)
+
+probability <- predict(fit.logit.trained, applications.validate, type = 'response')
+
+logit.predicted <- factor(probability > 0.75, levels = c(FALSE,TRUE),
+                     labels = c("approved","denied"))
+
+logit.perf <- table(applications.validate$Approved, logit.predicted, dnn = c("Actual","Predicted"))
+
+logit.perf
+
+# Graph ROC
+applications_roc <- roc(applications.validate$Approved ~ probability, plot = TRUE)
+
+# Calculate Area Under Curve
+auc(applications_roc)
+```
+
+### c. Find threshold that maximizes the sensitivity and specificity by pulling it from the ROC object.
+
+```{r}
+coords(applications_roc, "best", ret = "threshold")
+coords(applications_roc)
+
+# or
+
+threshold <- applications_roc$thresholds[which.max(applications_roc$sensitivities + applications_roc$specificities)]
+```
+
+### d. Use the best threshold
+
+```{r}
+logit.predicted.thresh <- factor(probability > threshold, levels = c(FALSE,TRUE),
+                     labels = c("approved","denied"))
+
+logit.perf.thresh <- table(applications.validate$Approved, logit.predicted.thresh, dnn = c("Actual","Predicted"))
+
+logit.perf.thresh
+```
+
+### e. Introduce Performance method from 'R in Action' to get the sensitivity, specificity, the false-positive rate, the false-negative rate, the model accuracy and error rate.
+
+```{r}
+performance <- function(table, n = 4){
+  if(!all(dim(table) == c(2,2)))
+    stop("Must be a 2 x 2 table")
+  tn = table[1,1]
+  fp = table[1,2]
+  fn = table[2,1]
+  tp = table[2,2]
+  sensitivity = tp/(tp+fn)
+  specificity = tn/(tn+fp)
+  ppp = tp/(tp+fp)
+  npp = tn/(tn+fp)
+  hitrate = (tp+tn)/(tp+tn+fp+fn)
+  result <- paste0("\nSensitivity = ", round(sensitivity,n),
+                   "\nSpecificity = ",round(specificity,n),
+                   "\nPositive Predictive Value = ", round(ppp,n),
+                   "\nNegative Predictive Value = ", round(npp,n),
+                   "\nAccuracy = ", round(hitrate,n), "\n")
+  cat(result)
+}
+```
+
+```{r}
+performance(logit.perf)
+
+performance(logit.perf.thresh)
 
 ```
 
-# Regression Analysis
+### f. The predictive accurracy of the original model was low but the after using the best threshold the predictive accuracy was actually lowered. 
 
-Run a regression with all the variables included. Print results of the regression.
+# D. Validation Techniques
+
+*"Next, using 10-fold cross validation, estimate a variety of logistic regression models and evaluate their predictive performance across a range of threshold values in each case. The models can (should) include interaction variables and polynomial terms (e.g., quadratic and cubic variables). Of interest is identifying the model and threshold value that yield the smallest average test mis-classification rate; however, you can also calculate model accuracy and the AUC. Document in a table the performance of the various models using the chosen performance measures."*
+
+### a. Run Gamma-Lasso regression
+```{r}
+
+training_response <- data.matrix(applications$Approved)
+training_data_matrix <- data.matrix(applications[ , c('Race','Risk','Marital Status','Self Employed', 'Years of Education')])
+result_reg <- gamlr(training_data_matrix, as.factor(training_response),  verb=FALSE, family='binomial')
+plot(result_reg)
+```
+
+### b. Perform 10 fold cross validation
+```{r}
+cv.result_reg <- cv.gamlr(training_data_matrix, as.factor(training_response), verb=TRUE,nfold =10)
+beta1se <- coef(cv.result_reg) ## 1se rule; see ?cv.gamlr
+betamin <- coef(cv.result_reg, select="min") ## min cv selection
+
+par(mfrow=c(1,2))
+plot(cv.result_reg)
+plot(cv.result_reg$gamlr) ## cv.gamlr includes a gamlr object
+par(mfrow=c(1,2))
+
+```
+### c. Compare model selections
 
 ```{r}
-simple_reg = glm(sale_def ~ bed + bath + area + area_heated + dist_cbd + dist_lakes + pool + lake_front + downtown + luxury, data=prop_prices)
-summary(simple_reg) 
-coef(simple_reg) 
+ll <- log(result_reg$lambda) ## the sequence of lambdas
+n <- nrow(applications)
+par(mfrow=c(1,2))
+plot(cv.result_reg)
+plot(ll, AIC(result_reg)/n, # scaled by the number of obs (n)
+	xlab="log lambda", ylab="IC/n", pch=21, bg="orange")
+abline(v=ll[which.min(AIC(result_reg))], col="orange", lty=3)
+abline(v=ll[which.min(BIC(result_reg))], col="green", lty=3)
+abline(v=ll[which.min(AICc(result_reg))], col="black", lty=3)
+points(ll, BIC(result_reg)/n, pch=21, bg="green")
+points(ll, AICc(result_reg)/n, pch=21, bg="black")
+legend("topleft", bty="n",
+	fill=c("black","orange","green"),legend=c("AICc","AIC","BIC"))
+```
+
+# E. Identify the Superior Model
+
+"*Of the competing models that you estimated and thresholds that you evaluated, identify the superior model for classification purposes. Re-estimate the model with the full sample of data. Then, graph the ROC, calculate the AUC, and compute the confusion matrix at the threshold level associated with the minimum average test mis-classification rate . Calculate the classifier sensitivity and specificity, the false-positive rate, the false negative rate, the accuracy, and overall mis-classification rate. How well does your superior model perform relative to the model estimated in C? Explain. Note that to do so you will need to calculate the confusion matrix from the estimated model in C at the threshold level.*"
+
+a. Perform a stepwise regression.
+
+```{r}
+logit.fit.reduced <- step(fit.logit)
 
 ```
 
-Which of the variables tested significant at the 95% level? Looking at the results and answering outside of the chunk is sufficient.
+b. Get ROC curve for the reduced model.
 
-Answer: Pool tested significant at the 95% confidence level.
-
-## Evaluating the model
-
-As is, are any of the Gauss-Markov assumptions violated? If so, which ones? How can you fix the issues?
-
-Using the plot of the regression model to test for Guass-Markov violations.
-
-The Residuals vs Fitted plot shows that there is increasing variance as price increases indicating bias which violates assumption 1. This plot also show that there is no linearity which is also a violation.
-
-The Q-Q plot does not show a diagnol line indicating that the data is not normally distributed.
 
 ```{r}
 
-plot(simple_reg)
+prob_reduced <- predict(logit.fit.reduced, applications.validate, type = 'response')
+
+my_roc_reduced <- roc(applications$Approved ~ prob_reduced, plot = TRUE)
+
+coords(my_roc_reduced, "best", ret="threshold")
+
+logit.reduced.pred.thresh <- factor(prob_reduced > threshold, levels = c(FALSE,TRUE),
+                     labels = c("approved","denied"))
+
+logit.prob_reduced.perf.thresh <- table(applications$Approved, logit.reduced.pred.thresh, dnn = c("Actual","Predicted"))
+
+logit.prob_reduced.perf.thresh
+```
+
+c. Attempt to use Decision Trees
+
+```{r}
+set.seed(1234)
+
+# make the decision tree with the rpart function
+dtree <- rpart(applications.train$Approved ~., data = applications.train, method = 'class', parms = list(split = 'information'))
+
+prp(dtree, type = 2, extra = 104,fallen.leaves = T)
 
 ```
 
-## New Model
-
-Based off of your findings in the previous section, make changes to the variables, the functional form, etc.
+d. Test the Predictive Accuracy
 
 ```{r}
-# Try removing outliers
-normalized <- subset(prop_prices, prop_prices$sale_def < 1000000)
+dtree.pred <- predict(dtree, applications.validate,type = "class")
 
-# Use only the most significant variables in the formula
-fixed_reg = glm(sale_def ~ bed + area_heated + lake_front + luxury, data=normalized)
-summary(fixed_reg) 
-coef(fixed_reg) 
-plot(fixed_reg)
-# Looking at the plots, it seems like a better fit
+dtree.perf <- table(applications.validate$Approved, dtree.pred, dnn = c("Actual","Predicted"))
 
-# Try using log of large values to even the playing field
-fixed_reg2 = glm(log(sale_def) ~ bed + log(area_heated) + lake_front + luxury, data=normalized)
-summary(fixed_reg2) 
-coef(fixed_reg2) 
-plot(fixed_reg2)
+dtree.perf
+```
+
+e. Try pruning the tree
+
+```{r}
+plotcp(dtree)
+
+dtree$cptable
+
+# change the penalty value 'cp' to prune the tree
+dtree.pruned <- prune(dtree,cp = 0.18)
+
+prp(dtree.pruned, type = 2, extra = 104,fallen.leaves = T)
+```
+
+f. Try Using a Conditional Inference Tree
+
+```{r}
+fit.ctree <- ctree(Approved ~., data = applications.train)
+
+plot(fit.ctree)
+```
+
+g. Prediction and Performance
+
+```{r}
+ctree.pred <- predict(fit.ctree, applications.validate, type = 'response')
+
+ctree.perf <- table(applications.validate$Approved, ctree.pred, dnn = c("Actual","Predicted"))
+```
+
+h. Random Forests
+
+```{r}
+set.seed(1234)
+
+fit.forest <- randomForest(Approved ~ Risk, data=applications.train, na.action=na.roughfix, importance = TRUE)
+
+fit.forest
+```
+
+i. Inspect the variable importance.
+
+```{r}
+importance(fit.forest,type = 2)
+```
+
+j. Prediction
+
+```{r}
+forest.pred <- predict(fit.forest, applications.validate)
+
+forest.perf <- table(applications.validate$Approved, forest.pred, dnn = c("Actual","Predicted"))
+
+forest.perf
+```
+
+k. Support Vector Machines
+
+```{r}
+set.seed(1234)
+
+fit.svm <- svm(Approved ~., data=applications.train)
+
+fit.svm
+```
+
+l. Prediction and Performance of SVM
+
+```{r}
+svm.pred <- predict(fit.svm,na.omit(applications.validate))
+
+svm.perf <- table(na.omit(applications.validate)$Approved, svm.pred, dnn = c("Actual","Predicted"))
+
+svm.perf
+```
+
+m. Tuning the model
+
+```{r}
+set.seed(1234)
+
+tuned <- tune.svm(Approved~., data = applications.train,
+                  gamma = 10^(-6:1),
+                  cost = 10^(-10:10))
+tuned
+```
+
+n. Then use the parameters to create the model
+
+```{r}
+set.seed(1234)
+
+fit.svm <- svm(Approved~., data=applications.train, gamma = 0.01, cost = 1)
+
+fit.svm
+```
+
+o. Prediction and Performance of Tuned Model
+
+```{r}
+svm.pred <- predict(fit.svm,na.omit(applications.validate))
+
+svm.perf <- table(na.omit(applications.validate)$Approved, svm.pred, dnn = c("Actual","Predicted"))
 
 ```
 
-# Prediction
-
-Based on the following inputs, predict the deflated sales price:
-
--   2 bed
--   2 bath
--   area_heated = 1223
--   area = 9750
--   dist_cbd = 19368
--   dist_lakes = 490
--   no pool
+p. Select the Best Model
 
 ```{r}
-# Using basic model
-new_house_df <- data.frame(bed=2,bath=2,area_heated=1223,area=9750,dist_cbd=19368,dist_lakes=490,pool=0,lake_front=0,luxury=0)
-basic_linear_model <- lm(formula = sale_def ~ bed + bath + area + area_heated + dist_cbd + 
-    dist_lakes + pool, data = prop_prices)
-predict(basic_linear_model, newdata=new_house_df)
+performance <- function(table, n = 4){
+  if(!all(dim(table) == c(2,2)))
+    stop("Must be a 2 x 2 table")
+  tn = table[1,1]
+  fp = table[1,2]
+  fn = table[2,1]
+  tp = table[2,2]
+  sensitivity = tp/(tp+fn)
+  specificity = tn/(tn+fp)
+  ppp = tp/(tp+fp)
+  npp = tn/(tn+fp)
+  hitrate = (tp+tn)/(tp+tn+fp+fn)
+  result <- paste0("Sensitivity = ", round(sensitivity,n),
+                   "\nSpecificity = ",round(specificity,n),
+                   "\nPositive Predictive Value = ", round(ppp,n),
+                   "\nNegative Predictive Value = ", round(npp,n),
+                   "\nAccuracy = ", round(hitrate,n))
+  cat(result)
+}
+```
 
-# Now using fixed models
-predict(fixed_reg, newdata=new_house_df)
+```{r}
+performance(logit.perf)
+performance(dtree.perf)
+performance(ctree.perf)
+performance(forest.perf)
+performance(svm.perf)
 
-# Need to take e^predication since fixed_reg2 is based on logs
-exp(predict(fixed_reg2, newdata=new_house_df))
+```
 
+# F. Summarize Modeling Efforts
 
+*"Upload an error-free and well-organized copy of your program and a report that summarizes your modeling efforts and the discussion/explanation of your findings from B, C, D, and E. Be certain to include a table describing the results from the various models you evaluated, and be certain to include the estimation results from your superior model estimated with the full dataset."*
+
+```{r}
 ```
