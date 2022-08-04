@@ -43,6 +43,8 @@ prop_prices$luxury[prop_prices$bed > 4 & prop_prices$area_heated > 2500 & prop_p
 
 # prop_prices$bed <- factor(prop_prices$bed)
 
+# You should convert categorical data to factor so that there aren't errors in your plots/histograms (-2)
+
 head(prop_prices)
 summary(prop_prices)
 
@@ -105,6 +107,9 @@ Provide basic summary statistics for univariate analysis. Also, provide the corr
 
 ```{r}
 summary(prop_prices)
+
+# What about spread sd/var (-5)
+
 cor(prop_prices)
 
 ```
@@ -124,22 +129,29 @@ Which of the variables tested significant at the 95% level? Looking at the resul
 
 Answer: Pool tested significant at the 95% confidence level.
 
+`A couple others tested significant as well (-8)`
+
 ## Evaluating the model
 
 As is, are any of the Gauss-Markov assumptions violated? If so, which ones? How can you fix the issues?
 
 Using the plot of the regression model to test for Guass-Markov violations.
 
-The Residuals vs Fitted plot shows that there is increasing variance as price increases indicating bias which violates assumption 1. This plot also show that there is no linearity which is also a violation.
+The Residuals vs Fitted plot shows that there is increasing variance as price increases indicating bias which violates `assumption 1`. This plot also show that there is no linearity which is also a violation.
 
 The Q-Q plot does not show a diagnol line indicating that the data is not normally distributed.
 
+`Actually, it is assumption 4, not assumption 1 that was violated there`
+
+`What about assumptions 2,3, and 5? (-15)`
 
 ```{r}
 
 plot(simple_reg)
 
 ```
+
+
 
 ## New Model
 
@@ -164,6 +176,7 @@ plot(fixed_reg2)
 
 ```
 
+`Did you check the GM assumptions after the manipulations? (-5)`
 
 # Prediction
 
@@ -189,6 +202,5 @@ predict(fixed_reg, newdata=new_house_df)
 
 # Need to take e^predication since fixed_reg2 is based on logs
 exp(predict(fixed_reg2, newdata=new_house_df))
-
 
 ```
