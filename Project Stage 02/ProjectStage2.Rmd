@@ -39,7 +39,7 @@ In this final project, we will use R to evaluate logistic regression models with
 
 *"The variables in the dataset do not have intuitive names (e.g., the meaning of S3 is unclear). Referencing the data description and the AER paper, identify the qualitative dependent that you will be modeling and the set of co-variates that you intend to include in your various models, and rename the variables so that they have (somewhat) intuitive names. Be certain that the debt-to-income ratio and the race, self-employed, marital status, and education indicator variables are included, among other variables."*
 
-### 1. Load Datasets. 
+### 1. Load Datasets.
 
 We downloaded the .csv file hmda.sw.csv from the GitHub repository and loaded it getting initial impressions of the data using the 'head' and 'summary' commands. Convert tibble to data.frame and remove all rows with NAs in them.
 
@@ -100,7 +100,7 @@ head(applications)
 
 It was necessary to clean the data before Interpretation
 
-#### a. Set all MISSING_OBSERVATION values to 0 to make data easier to work with, replace all NA with a reasonable value
+#### a. Set all MISSING_OBSERVATION values to a reasonable value to make data easier to work with, replace all NA with a reasonable value
 
 ```{r}
 applications$'Years of Education'[which(applications$`Years of Education` == MISSING_OBSERVATION)] <- median(applications$`Years of Education`)
@@ -145,7 +145,7 @@ applications$`Self Employed` <- factor(applications$`Self Employed`,
                                                labels=c('not_self_employed', 'self_employed'))
 ```
 
-#### d. Introduce new column to categorize applicants as having low, med, high risk DTI. I used the general guideline risk used by lenders found here https://www.investopedia.com/terms/d/dti.asp#toc-why-is-debt-to-income-ratio-important
+#### d. Introduce new column to categorize applicants as having low, med, high risk DTI. I used the general guideline risk used by lenders found here <https://www.investopedia.com/terms/d/dti.asp#toc-why-is-debt-to-income-ratio-important>
 
 ```{r}
 applications$Risk <- applications$'Dept to Income'
@@ -158,7 +158,7 @@ applications$'Risk' <- factor(applications$Risk,
 # applications[which(is.na(applications$`Risk`), arr.ind=TRUE),8] <- 'med' 
 ```
 
-There were many variables that we considered not to be significant therefore, the variables that we've chosen to include are the ones that we theorized would be the most significant. TODO: explain each
+There were many variables that we considered not to be significant therefore, the variables that we've chosen to include are the ones that we theorized would be the most significant. We theorized that Risk was the most significant as it is the main factor that banks use to qualify borrowers. However we also wanted to test for any bias regarding race and thus, included Race in our model.
 
 # B. Generate Summary Statistics
 
@@ -180,9 +180,11 @@ hist(applications$`Dept to Income`, main="Dept to Income")
 hist(applications$`Years of Education`, main= "Years of Education")
 par(mfrow = c(1,1))
 ```
-We can see from the histogram for Dept to Income that the raw data does not appear to be normally distributed. We will therefore need to normalize it in some manner. Let's try removing rows with greater than 100$ DTI which does not make sense.
+
+We can see from the histogram for Dept to Income that the raw data does not appear to be normally distributed. We will therefore need to normalize it in some manner. Let's try removing rows with greater than 100\$ DTI which does not make sense.
 
 #### i. Normalize Dept to Income
+
 ```{r}
 # applications$`Years of Education Norm` <- log(applications$`Years of Education`)
 outliers <- c(which(applications$`Dept to Income` > 100))
@@ -192,6 +194,7 @@ hist(applications$`Dept to Income`, main="Dept to Income")
 
 
 ```
+
 Without the outliers, the DTI now appears to be normally distributed so, we will move on.
 
 ### c. Frequency Counts by Race
@@ -236,6 +239,7 @@ summary(fit.logit)
 coef(fit.logit) 
 
 ```
+
 We see here that High Risk, Race White and Years of Education, all tested very significant. We will try to hone down our model by trimming out Self Employment and Marital Status on the hunch that they are causing noise.
 
 ```{r}
@@ -244,7 +248,8 @@ summary(fit.logit)
 coef(fit.logit) 
 
 ```
-This model with just Race, Risk and Year of Education seems to better explain an applicatants changes of being approved. We see that a High Risk applicant has 1.72% less chance of being approved and just being White increases the applicants chance of being approved by 1.3%. 
+
+This model with just Race, Risk and Year of Education seems to better explain an applicatants changes of being approved. We see that a High Risk applicant has 1.72% less chance of being approved and just being White increases the applicants chance of being approved by 1.3%.
 
 ### b. Train and Validate a Classifier and then Graph the ROC
 
@@ -255,6 +260,9 @@ train <- sample(nrow(applications), 0.7*nrow(applications))
 
 applications.train <- applications[train,]
 applications.validate <- applications[-train,]
+
+applications.train <- na.omit(applications.train)
+applications.validate <- na.omit(applications.validate)
 
 table(applications.train$Approved)
 summary(applications.validate$Approved)
@@ -291,6 +299,7 @@ coords(applications_roc)
 threshold <- applications_roc$thresholds[which.max(applications_roc$sensitivities + applications_roc$specificities)]
 threshold
 ```
+
 We see that a threshold of .8967 will maximize specificity. So we will use that going forward.
 
 ### d. Use the best threshold
@@ -303,6 +312,7 @@ logit.perf.thresh <- table(applications.validate$Approved, logit.predicted.thres
 
 logit.perf.thresh
 ```
+
 The confusion matrix shows that our model had many false negatives. It doesn't appear to perform well and is much worse than just taking the average and just approving every applicant which will be correct 88% of the time.
 
 ### e. Introduce Performance method from 'R in Action' to get the sensitivity, specificity, the false-positive rate, the false-negative rate, the model accuracy and error rate.
@@ -335,16 +345,15 @@ performance("Logit.perf", logit.perf)
 performance("Logit.perf.thresh", logit.perf.thresh)
 
 ```
-The accuracy of our model was below the 88% average at 84%.
 
-
-### f. The predictive accurracy of the original model was low but the after using the best threshold the predictive accuracy was actually lowered. 
+The accuracy of our model was below the 88% average at 84%. The predictive accurracy of the original model was low but the after using the best threshold the predictive accuracy was actually lowered.
 
 # D. Validation Techniques
 
 *"Next, using 10-fold cross validation, estimate a variety of logistic regression models and evaluate their predictive performance across a range of threshold values in each case. The models can (should) include interaction variables and polynomial terms (e.g., quadratic and cubic variables). Of interest is identifying the model and threshold value that yield the smallest average test mis-classification rate; however, you can also calculate model accuracy and the AUC. Document in a table the performance of the various models using the chosen performance measures."*
 
 ### a. Run Gamma-Lasso regression
+
 ```{r}
 applications <- na.omit(applications)
 training_response <- data.matrix(applications$Approved)
@@ -354,6 +363,7 @@ plot(result_reg)
 ```
 
 ### b. Perform 10 fold cross validation
+
 ```{r}
 cv.result_reg <- cv.gamlr(training_data_matrix, as.factor(training_response), verb=TRUE,nfold =10)
 beta1se <- coef(cv.result_reg) ## 1se rule; see ?cv.gamlr
@@ -365,6 +375,7 @@ plot(cv.result_reg$gamlr) ## cv.gamlr includes a gamlr object
 par(mfrow=c(1,2))
 
 ```
+
 ### c. Compare model selections
 
 ```{r}
@@ -396,18 +407,17 @@ logit.fit.reduced <- step(fit.logit)
 set.seed(1234)
 
 # make the decision tree with the rpart function
-dtree <- rpart(Approved ~ Race + Risk + applications$`Years of Education`, data = applications, method = 'class', parms = list(split = 'information'))
+dtree <- rpart(Approved ~., data = applications.train, method = 'class', parms = list(split = 'information'), minsplit = 2, minbucket = 1)
 
 prp(dtree, type = 2, extra = 104,fallen.leaves = T)
-
-```
-### g. Try pruning the tree
-
-```{r}
 plotcp(dtree)
 
 dtree$cptable
+```
 
+### g. Try pruning the tree
+
+```{r}
 # change the penalty value 'cp' to prune the tree
 dtree.pruned <- prune(dtree,cp = 0.18)
 
@@ -417,7 +427,7 @@ prp(dtree.pruned, type = 2, extra = 104,fallen.leaves = T)
 ### h. Try Using a Conditional Inference Tree
 
 ```{r}
-fit.ctree <- ctree(Approved ~ Race + Risk, data = applications)
+fit.ctree <- ctree(Approved ~ Race + Risk + applications$'Years of Education', data = na.omit(applications))
 
 plot(fit.ctree)
 ```
@@ -437,7 +447,7 @@ fit.forest
 ```{r}
 set.seed(1234)
 
-fit.svm <- svm(Approved ~ Race + Risk + applications$`Years of Education`, data=na.omit(applications))
+fit.svm <- svm(Approved ~ Race + Risk + `Years of Education`, data=na.omit(applications.train))
 
 fit.svm
 ```
@@ -447,22 +457,21 @@ fit.svm
 ```{r}
 set.seed(1234)
 
-tuned <- tune.svm(Approved~ Race + Risk, data = na.omit(applications.train),
+tuned.svm <- tune.svm(Approved ~., data = na.omit(applications.train),
                   gamma = 10^(-6:1),
                   cost = 10^(-10:10))
-tuned
+tuned.svm
 ```
 
-n. Then use the parameters to create the model
+### n. Then use the parameters to create the model
 
 ```{r}
 set.seed(1234)
 
-fit.svm <- svm(Approved ~ Race + Risk, data=applications.train, gamma = 0.01, cost = 1)
+tuned.fit.svm <- svm(Approved ~ Race + Risk + `Years of Education`, data=applications.train, gamma = 0.001, cost = 1)
 
-fit.svm
+tuned.fit.svm
 ```
-
 
 # E. Identify the Superior Model
 
@@ -488,24 +497,22 @@ logit.prob_reduced.perf.thresh <- table(applications$Approved, logit.reduced.pre
 logit.prob_reduced.perf.thresh
 ```
 
-
 ### b. Test the Predictive Accuracy of DTree model
 
 ```{r}
-dtree.pred <- predict(dtree, applications,type = "class")
+dtree.pred <- predict(dtree, applications.validate,type = "class")
 
-dtree.perf <- table(applications$Approved, dtree.pred, dnn = c("Actual","Predicted"))
+dtree.perf <- table(applications.validate$Approved, dtree.pred, dnn = c("Actual","Predicted"))
 
 dtree.perf
 ```
 
-
 ### c. Prediction and Performance of the CTree model
 
 ```{r}
-ctree.pred <- predict(fit.ctree, applications.validate, type = 'response')
+ctree.pred <- predict(fit.ctree, na.omit(applications), type = 'response')
 
-ctree.perf <- table(applications.validate$Approved, ctree.pred, dnn = c("Actual","Predicted"))
+ctree.perf <- table(applications$Approved, ctree.pred, dnn = c("Actual","Predicted"))
 ```
 
 ### d. Inspect the variable importance for the Forest model
@@ -527,9 +534,9 @@ forest.perf
 ### f. Prediction and Performance of SVM
 
 ```{r}
-svm.pred <- predict(fit.svm,na.omit(applications))
+svm.pred <- predict(fit.svm,na.omit(applications.validate))
 
-svm.perf <- table(na.omit(applications)$Approved, svm.pred, dnn = c("Actual","Predicted"))
+svm.perf <- table(na.omit(applications.validate)$Approved, svm.pred, dnn = c("Actual","Predicted"))
 
 svm.perf
 ```
@@ -537,9 +544,9 @@ svm.perf
 ### g. Prediction and Performance of Tuned SVM Model
 
 ```{r}
-svm.pred <- predict(fit.svm,na.omit(applications.validate))
+tuned.svm.pred <- predict(tuned.fit.svm,na.omit(applications.validate))
 
-svm.perf <- table(na.omit(applications.validate)$Approved, svm.pred, dnn = c("Actual","Predicted"))
+tuned.svm.perf <- table(na.omit(applications.validate)$Approved, tuned.svm.pred, dnn = c("Actual","Predicted"))
 
 ```
 
@@ -548,11 +555,12 @@ svm.perf <- table(na.omit(applications.validate)$Approved, svm.pred, dnn = c("Ac
 Performance Metrics for all Models
 
 ```{r}
-performance("Logic", logit.perf)
+performance("Logistic", logit.perf)
 performance("DTree", dtree.perf)
 performance("CTree", ctree.perf)
 performance("Forest", forest.perf)
 performance("SVM", svm.perf)
+performance("Tuned SVM", tuned.svm.perf)
 
 ```
 
@@ -560,5 +568,26 @@ performance("SVM", svm.perf)
 
 *"Upload an error-free and well-organized copy of your program and a report that summarizes your modeling efforts and the discussion/explanation of your findings from B, C, D, and E. Be certain to include a table describing the results from the various models you evaluated, and be certain to include the estimation results from your superior model estimated with the full dataset."*
 
+In summary, we theorized that a model including Race, Risk and Years of Education would accurately model an applicants chance at being approved. We were testing to determine if there was any bias based on race and therefore included that factor in all the models tested. We tried several different classifiers with varying results. The SVM model had the highest predictive accuracy.
+
+Estimation results from our superior model (SVM) using the full dataset:
+
 ```{r}
+superior.svm.pred <- predict(fit.svm,na.omit(applications))
+
+superior.svm.perf <- table(na.omit(applications)$Approved, superior.svm.pred, dnn = c("Actual","Predicted"))
+
+superior.svm.perf
 ```
+
+Table of results from the various model that we evaluated.
+
+| Model | Results |
+|-------|---------|
+| Logistic | Predictive value lower than approving all but had least false positives.   |
+| Dtree | Nearly perfect predictive value.     |
+| Ctree | Accuracy only slightly better than approving all at just over 88%    |
+| Forest | Same as CTree model.    |
+| SVM | Similar performance to the other tree like predictive models.    |
+| Tuned SVM | Even after getting tuning param of gamma = .001 and cost = 1, the tuned model did not improve perf.    |
+
