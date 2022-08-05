@@ -137,3 +137,5 @@ legend("topright", bty="n", lwd=1,
 	col=c("black","orange","green","blue","purple"),
 	legend=c("AICc","AIC","BIC","CV.min","CV.1se"))
 ```
+
+`Didn't calculate RMSE and determine which model performed the best (-20)`
